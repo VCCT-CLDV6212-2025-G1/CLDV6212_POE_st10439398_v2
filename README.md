@@ -73,6 +73,13 @@ A comprehensive retail management web application demonstrating the integration 
 - File categorization and metadata
 - Download and deletion capabilities
 
+### Azure Functions
+Added Azure functions that get called upon by the MVC
+- QueueOperationsFunction.cs  / Queue Trigger
+- StoreToTableFunction.cs / Http Trigger
+- WrtieToBlobFunction.cs / Http Trigger  
+- WriteToFileFunction.cs / Http Trigger
+
 
 ## Project Structure
 ```
@@ -91,10 +98,16 @@ CLDV6212_POE_st10439398/
 │   └── FileUploadModel.cs
 ├── Services/
 │   ├── Interfaces/
+│     ├── IQueueService.cs
+│     ├── ITableService.cs
+│     ├── IBlobService.cs
+│     ├── IFileService.cs
+│     ├── IFunctionService.cs
 │   └── Implementations/
 │       ├── TableService.cs
 │       ├── BlobService.cs
 │       ├── QueueService.cs
+│       ├── FunctionService.cs
 │       └── FileService.cs
 ├── Views/
 │   ├── Customer/
@@ -104,6 +117,26 @@ CLDV6212_POE_st10439398/
 │   └── File/
 └── wwwroot/
 ```
+├── Controllers/
+│   ├── CustomerController.cs
+│   ├── ProductController.cs
+│   ├── OrderController.cs
+│   ├── InventoryController.cs
+│   └── FileController.cs
+├── Models/
+│   ├── Customer.cs
+│   ├── Product.cs
+│   ├── OrderMessage.cs
+│   ├── InventoryMessage.cs
+│   └── FileUploadModel.cs
+
+CLDV6212_POE_Functions/
+├── Program.cs
+├── QueueOperationsFunction.cs
+├── StoreToTableFunction.cs
+├── WriteToBlobFunction.cs
+├── WriteToFileFunction.cs
+
 
 ## Installation and Setup
 
@@ -119,8 +152,6 @@ CLDV6212_POE_st10439398/
    git clone [YOUR-REPOSITORY-URL]
    cd CLDV6212_POE_st10439398
    ```
-
-
 
 3. **Run the application:**
    ```bash
