@@ -16,7 +16,7 @@ A comprehensive retail management web application demonstrating the integration 
 - **Framework:** ASP.NET Core MVC (.NET 8.0)
 - **Cloud Platform:** Microsoft Azure
 - **Storage Services:** Azure Tables, Blob Storage, Queue Storage, File Storage
-- **Hosting:** Azure App Service
+- **Hosting:** Azure App Service & Azure Functions App
 - **IDE:** Microsoft Visual Studio
 - **Version Control:** Git/GitHub
 
