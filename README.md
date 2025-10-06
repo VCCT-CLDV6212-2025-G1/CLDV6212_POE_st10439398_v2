@@ -7,13 +7,13 @@ A comprehensive retail management web application demonstrating the integration 
 ## Student Information
 - **Student Number:** st10439398
 - **Module:** CLDV6212 - Cloud Development
-- **Assignment:** Portfolio of Evidence Part 1
+- **Assignment:** Portfolio of Evidence Part 1 and 2
 
 ## Live Application **Deployed URL:** https://abcretail-st10439398-gccda9cgeye9djgw.southafricanorth-01.azurewebsites.net/
 
 
 ## Technology Stack
-- **Framework:** ASP.NET Core MVC (.NET 6+)
+- **Framework:** ASP.NET Core MVC (.NET 8.0)
 - **Cloud Platform:** Microsoft Azure
 - **Storage Services:** Azure Tables, Blob Storage, Queue Storage, File Storage
 - **Hosting:** Azure App Service
