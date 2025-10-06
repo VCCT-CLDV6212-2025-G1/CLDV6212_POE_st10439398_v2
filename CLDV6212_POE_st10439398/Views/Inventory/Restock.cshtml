@@ -1,0 +1,178 @@
+﻿@*------------Start of file------------*@
+@model IEnumerable<CLDV6212_POE_st10439398.Models.Product>
+
+@{
+    ViewData["Title"] = "Restock Products";
+    var allProducts = ViewBag.AllProducts as List<CLDV6212_POE_st10439398.Models.Product>;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-box"></i> Restock Products</h2>
+                <div>
+                    <a asp-action="Adjust" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Manual Adjustment
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+
+            <!-- Low Stock Alert -->
+            @if (Model != null && Model.Any())
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Low Stock Alert:</strong> The following @Model.Count() products have low stock (less than 10 units) and may need restocking.
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Products Needing Attention</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var product in Model)
+                            {
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card border-warning h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">@product.Name</h6>
+                                            <p class="card-text text-muted">@product.Category</p>
+                                            <div class="mb-2">
+                                                <span class="badge bg-danger">@product.StockQuantity units left</span>
+                                            </div>
+                                            <form asp-action="QuickRestock" method="post" class="d-inline">
+                                                <input type="hidden" name="productId" value="@product.ProductId" />
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" name="restockQuantity" class="form-control"
+                                                           min="1" max="1000" value="20" placeholder="Qty" />
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-plus"></i> Restock
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Great!</strong> No products currently have low stock levels.
+                </div>
+            }
+
+            <!-- All Products Inventory Overview -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">All Products - Inventory Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Current Stock</th>
+                                    <th>Status</th>
+                                    <th>Price</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (allProducts != null)
+                                {
+                                    @foreach (var product in allProducts.OrderBy(p => p.StockQuantity))
+                                    {
+                                        <tr class="@(product.StockQuantity < 10 ? "table-warning" : product.StockQuantity < 5 ? "table-danger" : "")">
+                                            <td>
+                                                <strong>@product.Name</strong>
+                                                @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                                {
+                                                    <br>
+
+                                                    <small class="text-muted">Has image</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">@product.Category</span>
+                                            </td>
+                                            <td>
+                                                <strong>@product.StockQuantity</strong>
+                                                @if (product.StockQuantity < 5)
+                                                {
+                                                    <span class="badge bg-danger ms-1">Critical</span>
+                                                }
+                                                else if (product.StockQuantity < 10)
+                                                {
+                                                    <span class="badge bg-warning ms-1">Low</span>
+                                                }
+                                                else if (product.StockQuantity > 100)
+                                                {
+                                                    <span class="badge bg-success ms-1">High</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (product.IsAvailable)
+                                                {
+                                                    <span class="badge bg-success">Available</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Unavailable</span>
+                                                }
+                                            </td>
+                                            <td>R @product.Price.ToString("N2")</td>
+                                            <td>
+                                                <form asp-action="QuickRestock" method="post" class="d-inline">
+                                                    <input type="hidden" name="productId" value="@product.ProductId" />
+                                                    <div class="input-group input-group-sm" style="width: 120px;">
+                                                        <input type="number" name="restockQuantity" class="form-control form-control-sm"
+                                                               min="1" max="1000" value="10" />
+                                                        <button type="submit" class="btn btn-success btn-sm">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Add confirmation for large restock quantities
+            $('form[asp-action="QuickRestock"]').on('submit', function(e) {
+                var quantity = parseInt($(this).find('input[name="restockQuantity"]').val());
+                var productName = $(this).closest('tr').find('strong').first().text();
+
+                if (quantity > 100) {
+                    if (!confirm(`Are you sure you want to restock ${productName} with ${quantity} units? This is a large quantity.`)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+            });
+        });
+    </script>
+}
+@*------------End of file------------*@

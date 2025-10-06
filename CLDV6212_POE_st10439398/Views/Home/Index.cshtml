@@ -1,0 +1,230 @@
+﻿@*------------sTart of file------------*@
+@{
+    ViewData["Title"] = "ABC Retail - Cloud Dashboard";
+}
+
+<div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="jumbotron bg-primary text-white rounded mb-5 p-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4">ABC Retail Cloud System</h1>
+                <p class="lead">Comprehensive Azure cloud solution for modern retail operations</p>
+                <p>Leveraging Azure Tables, Blob Storage, Queues, and Files for scalable business management.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="fas fa-cloud fa-5x opacity-75"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x text-info mb-3"></i>
+                    <h2 class="text-info">@(ViewBag.CustomerCount ?? 0)</h2>
+                    <p class="card-text">Customers</p>
+                    <a asp-controller="Customer" asp-action="Index" class="btn btn-outline-info btn-sm">Manage</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-box fa-3x text-success mb-3"></i>
+                    <h2 class="text-success">@(ViewBag.ProductCount ?? 0)</h2>
+                    <p class="card-text">Products</p>
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-outline-success btn-sm">Manage</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-list-alt fa-3x text-warning mb-3"></i>
+                    <h2 class="text-warning">@(ViewBag.QueueLength ?? 0)</h2>
+                    <p class="card-text">Orders in Queue</p>
+                    <a asp-controller="Order" asp-action="Queue" class="btn btn-outline-warning btn-sm">View Queue</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                    <h2 class="text-primary">@(ViewBag.FileCount ?? 0)</h2>
+                    <p class="card-text">Contract Files</p>
+                    <a asp-controller="File" asp-action="Index" class="btn btn-outline-primary btn-sm">Manage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Azure Services Cards -->
+    <div class="row mb-5">
+        <div class="col-md-12 mb-4">
+            <h2 class="text-center"><i class="fas fa-server"></i> Azure Services Dashboard</h2>
+            <p class="text-center text-muted">Manage all your cloud services from one central location</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Customer Management - Azure Tables -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> Customer Management
+                        <small class="float-end">Azure Tables</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Store and manage customer profiles with Azure Table Storage for fast, scalable NoSQL operations.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Customer profiles & contact info</li>
+                        <li><i class="fas fa-check text-success"></i> Scalable NoSQL storage</li>
+                        <li><i class="fas fa-check text-success"></i> Fast query performance</li>
+                    </ul>
+                    @{
+                        var recentCustomers = ViewBag.RecentCustomers as IEnumerable<CLDV6212_POE_st10439398.Models.Customer>;
+                    }
+                    @if (recentCustomers != null && recentCustomers.Any())
+                    {
+                        <h6>Recent Customers:</h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var customer in recentCustomers.Take(3))
+                            {
+                                <li>• @customer.FullName</li>
+                            }
+                        </ul>
+                    }
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("Index", "Customer")" class="btn btn-info">
+                        <i class="fas fa-arrow-right"></i> Manage Customers
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Catalog - Azure Tables + Blob Storage -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-box"></i> Product Catalog
+                        <small class="float-end">Tables + Blobs</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Manage products with Azure Tables for data and Blob Storage for images.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Product information storage</li>
+                        <li><i class="fas fa-check text-success"></i> Image storage in blobs</li>
+                        <li><i class="fas fa-check text-success"></i> Inventory management</li>
+                    </ul>
+                    @{
+                        var recentProducts = ViewBag.RecentProducts as IEnumerable<CLDV6212_POE_st10439398.Models.Product>;
+                    }
+                    @if (recentProducts != null && recentProducts.Any())
+                    {
+                        <h6>Recent Products:</h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var product in recentProducts.Take(3))
+                            {
+                                <li>• @product.Name (@product.Price.ToString("C"))</li>
+                            }
+                        </ul>
+                    }
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("Index", "Product")" class="btn btn-success">
+                        <i class="fas fa-arrow-right"></i> Manage Products
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Processing - Azure Queues -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt"></i> Order Processing
+                        <small class="float-end">Azure Queues</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Reliable order processing using Azure Queue Storage for message handling.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Asynchronous order processing</li>
+                        <li><i class="fas fa-check text-success"></i> Reliable message delivery</li>
+                        <li><i class="fas fa-check text-success"></i> Scalable queue management</li>
+                    </ul>
+                    <div class="alert alert-light">
+                        <small>
+                            <strong>Queue Status:</strong> @(ViewBag.QueueLength ?? 0) orders pending
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("Index", "Order")" class="btn btn-warning text-dark">
+                        <i class="fas fa-arrow-right"></i> Manage Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Management - Azure Files -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt"></i> Contract Files
+                        <small class="float-end">Azure Files</small>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Secure document storage using Azure Files for contract management.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Secure file storage</li>
+                        <li><i class="fas fa-check text-success"></i> SMB protocol support</li>
+                        <li><i class="fas fa-check text-success"></i> Document versioning</li>
+                    </ul>
+                    <div class="alert alert-light">
+                        <small>
+                            <strong>Storage:</strong> @(ViewBag.FileCount ?? 0) contract files stored
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("Index", "File")" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Manage Files
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+    {
+        <div class="alert alert-warning mt-4">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Azure Storage Connection Issue:</strong><br />
+            @ViewBag.ErrorMessage
+            <hr />
+            <small>
+                <strong>Quick fixes:</strong>
+                <ul class="mb-0">
+                    <li>Verify your connection string in appsettings.json</li>
+                    <li>Ensure your Azure Storage Account is accessible</li>
+                    <li>Check that your storage account key is correct</li>
+                    <li>For local development, you can use Azurite storage emulator</li>
+                </ul>
+            </small>
+        </div>
+    }
+</div>
+@*------------End of file------------*@

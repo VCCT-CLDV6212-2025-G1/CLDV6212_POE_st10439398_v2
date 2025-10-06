@@ -1,0 +1,169 @@
+﻿@*------------Start of file------------*@
+@model CLDV6212_POE_st10439398.Models.InventoryAdjustmentModel
+
+@{
+    ViewData["Title"] = "Adjust Inventory";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0">
+                        <i class="fas fa-edit"></i> Adjust Inventory
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Adjust" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Inventory Adjustment Guidelines:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Positive numbers increase stock (restocking)</li>
+                                    <li>Negative numbers decrease stock (corrections, damage)</li>
+                                    <li>All adjustments are processed through the inventory queue</li>
+                                    <li>Stock cannot go below 0</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ProductId" class="form-label">Select Product</label>
+                            <select asp-for="ProductId" class="form-control" required id="productSelect">
+                                <option value="">-- Select a Product --</option>
+                                @foreach (var product in Model.Products)
+                                {
+                                    <option value="@product.ProductId"
+                                            data-current-stock="@product.StockQuantity"
+                                            data-product-name="@product.Name">
+                                        @product.Name - Current Stock: @product.StockQuantity
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="AdjustmentType" class="form-label">Adjustment Type</label>
+                            <select asp-for="AdjustmentType" class="form-control" required>
+                                <option value="">-- Select Type --</option>
+                                <option value="RESTOCK">Restock (Adding new inventory)</option>
+                                <option value="ADJUSTMENT">Adjustment (Correction/Damage/Loss)</option>
+                            </select>
+                            <span asp-validation-for="AdjustmentType" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="QuantityChange" class="form-label">Quantity Change</label>
+                                    <input asp-for="QuantityChange" class="form-control" type="number"
+                                           min="-9999" max="9999" id="quantityInput" placeholder="Enter + or - number" />
+                                    <span asp-validation-for="QuantityChange" class="text-danger"></span>
+                                    <div class="form-text">Use positive numbers to add stock, negative to reduce</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Stock</label>
+                                    <div class="form-control bg-light" id="currentStock">
+                                        Select a product to see current stock
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="card bg-light" id="previewCard" style="display: none;">
+                                <div class="card-body">
+                                    <h6>Preview:</h6>
+                                    <div id="previewContent"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label">Reason (Optional)</label>
+                            <textarea asp-for="Reason" class="form-control" rows="3"
+                                      placeholder="Explain why this adjustment is needed..."></textarea>
+                            <span asp-validation-for="Reason" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Inventory
+                            </a>
+                            <button type="submit" class="btn btn-warning" id="submitBtn" disabled>
+                                <i class="fas fa-save"></i> Process Adjustment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function() {
+            function updatePreview() {
+                var selectedProduct = $('#productSelect option:selected');
+                var quantityChange = parseInt($('#quantityInput').val()) || 0;
+                var productName = selectedProduct.data('product-name');
+                var currentStock = parseInt(selectedProduct.data('current-stock')) || 0;
+
+                if (selectedProduct.val()) {
+                    $('#currentStock').text(currentStock + ' units');
+
+                    if (quantityChange !== 0) {
+                        var newStock = currentStock + quantityChange;
+                        var changeText = quantityChange > 0 ? '+' + quantityChange : quantityChange.toString();
+                        var resultClass = quantityChange > 0 ? 'text-success' : 'text-danger';
+
+                        if (newStock < 0) {
+                            newStock = 0;
+                            $('#previewContent').html(`
+                                <strong>Product:</strong> ${productName}<br>
+                                <strong>Current Stock:</strong> ${currentStock}<br>
+                                <strong>Attempted Change:</strong> <span class="${resultClass}">${changeText}</span><br>
+                                <strong>Final Stock:</strong> <span class="text-warning">0 (cannot go negative)</span>
+                            `);
+                        } else {
+                            $('#previewContent').html(`
+                                <strong>Product:</strong> ${productName}<br>
+                                <strong>Current Stock:</strong> ${currentStock}<br>
+                                <strong>Change:</strong> <span class="${resultClass}">${changeText}</span><br>
+                                <strong>New Stock:</strong> <strong>${newStock}</strong>
+                            `);
+                        }
+
+                        $('#previewCard').show();
+                        $('#submitBtn').prop('disabled', false);
+                    } else {
+                        $('#previewCard').hide();
+                        $('#submitBtn').prop('disabled', true);
+                    }
+                } else {
+                    $('#currentStock').text('Select a product to see current stock');
+                    $('#previewCard').hide();
+                    $('#submitBtn').prop('disabled', true);
+                }
+            }
+
+            $('#productSelect, #quantityInput').change(updatePreview);
+            $('#quantityInput').keyup(updatePreview);
+
+            // Initial update
+            updatePreview();
+        });
+    </script>
+}
+@*------------End of file------------*@

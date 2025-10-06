@@ -1,0 +1,191 @@
+﻿@*------------Start of file------------*@
+@model IEnumerable<CLDV6212_POE_st10439398.Models.InventoryMessage>
+
+@{
+    ViewData["Title"] = "Inventory Management Queue";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-warehouse"></i> Inventory Management Queue</h2>
+                <div>
+                    <a asp-action="Adjust" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adjust Inventory
+                    </a>
+                    <a asp-action="Restock" class="btn btn-success">
+                        <i class="fas fa-box"></i> Restock Products
+                    </a>
+                </div>
+            </div>
+
+            <!-- Queue Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <h3>@ViewBag.QueueLength</h3>
+                            <p class="mb-0">Inventory Updates in Queue</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-eye fa-2x mb-2"></i>
+                            <h3>@Model.Count()</h3>
+                            <p class="mb-0">Visible Updates</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-minus-circle fa-2x mb-2"></i>
+                            <h3>@Model.Count(i => i.QuantityChange < 0)</h3>
+                            <p class="mb-0">Stock Reductions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Queue Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <form asp-action="ProcessNext" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-success"
+                            @(ViewBag.QueueLength == 0 ? "disabled" : "")>
+                                <i class="fas fa-play"></i> Process Next Update
+                            </button>
+                        </form>
+                        <form asp-action="ClearQueue" method="post" class="d-inline"
+                              onsubmit="return confirm('Are you sure you want to clear all inventory updates from the queue?');">
+                            <button type="submit" class="btn btn-danger"
+                            @(ViewBag.QueueLength == 0 ? "disabled" : "")>
+                                <i class="fas fa-trash"></i> Clear Queue
+                            </button>
+                        </form>
+                        <button class="btn btn-info" onclick="location.reload();">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue Contents -->
+            @if (Model != null && Model.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Inventory Updates in Queue</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Product</th>
+                                        <th>Operation</th>
+                                        <th>Quantity Change</th>
+                                        <th>Previous Stock</th>
+                                        <th>New Stock</th>
+                                        <th>Reason</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int position = 1;
+                                    }
+                                    @foreach (var update in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @if (position == 1)
+                                                {
+                                                    <span class="badge bg-primary">Next</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">@position</span>
+                                                }
+                                            </td>
+                                            <td>@update.ProductName</td>
+                                            <td>
+                                                @if (update.OperationType == "SALE")
+                                                {
+                                                    <span class="badge bg-danger">@update.OperationType</span>
+                                                }
+                                                else if (update.OperationType == "RESTOCK")
+                                                {
+                                                    <span class="badge bg-success">@update.OperationType</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">@update.OperationType</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (update.QuantityChange > 0)
+                                                {
+                                                    <span class="text-success">+@update.QuantityChange</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger">@update.QuantityChange</span>
+                                                }
+                                            </td>
+                                            <td>@update.PreviousStock</td>
+                                            <td><strong>@update.NewStock</strong></td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(update.Reason))
+                                                {
+                                                    <span title="@update.Reason">
+                                                        @(update.Reason.Length > 30 ? update.Reason.Substring(0, 30) + "..." : update.Reason)
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No reason</span>
+                                                }
+                                            </td>
+                                            <td>@update.Timestamp.ToString("MM/dd/yyyy HH:mm")</td>
+                                        </tr>
+                                        position++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    <h4>No Inventory Updates in Queue</h4>
+                    <p>No inventory changes are currently pending processing.</p>
+                    <a asp-action="Adjust" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Inventory Adjustment
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh every 30 seconds
+    setTimeout(function(){
+        location.reload();
+    }, 30000);
+</script>
+
+@*------------End of file------------*@

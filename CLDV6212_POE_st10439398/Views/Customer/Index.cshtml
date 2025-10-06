@@ -1,0 +1,79 @@
+﻿@*------------Start of file------------*@
+@model IEnumerable<CLDV6212_POE_st10439398.Models.Customer>
+
+@{
+    ViewData["Title"] = "Customers";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> Customer Management</h2>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Customer
+                </a>
+            </div>
+
+            @if (Model != null && Model.Any())
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Customer ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>City</th>
+                                        <th>Created Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var customer in Model)
+                                    {
+                                        <tr>
+                                            <td><code>@customer.CustomerId</code></td>
+                                            <td>@customer.FullName</td>
+                                            <td>@customer.Email</td>
+                                            <td>@customer.Phone</td>
+                                            <td>@customer.City</td>
+                                            <td>@customer.CreatedDate.ToString("MM/dd/yyyy")</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a asp-action="Details" asp-route-id="@customer.CustomerId"
+                                                       class="btn btn-outline-info" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Delete" asp-route-id="@customer.CustomerId"
+                                                       class="btn btn-outline-danger" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    <h4>No Customers Found</h4>
+                    <p>Start by adding your first customer to the system.</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add First Customer
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@*------------End of file------------*@

@@ -1,0 +1,89 @@
+﻿@*------------Start of file------------*@
+@model CLDV6212_POE_st10439398.Models.Customer
+
+@{
+    ViewData["Title"] = "Customer Details";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-user"></i> Customer Details
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.CustomerId):</dt>
+                        <dd class="col-sm-8"><code>@Html.DisplayFor(model => model.CustomerId)</code></dd>
+
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.FullName):</dt>
+                        <dd class="col-sm-8">@Html.DisplayFor(model => model.FullName)</dd>
+
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Email):</dt>
+                        <dd class="col-sm-8">
+                            <a href="mailto:@Model.Email">@Html.DisplayFor(model => model.Email)</a>
+                        </dd>
+
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Phone):</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Phone))
+                            {
+                                <a href="tel:@Model.Phone">@Html.DisplayFor(model => model.Phone)</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not provided</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.Address):</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Address))
+                            {
+                                @Html.DisplayFor(model => model.Address)
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not provided</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.City):</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.City))
+                            {
+                                @Html.DisplayFor(model => model.City)
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not provided</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">@Html.DisplayNameFor(model => model.CreatedDate):</dt>
+                        <dd class="col-sm-8">@Model.CreatedDate.ToString("MMMM dd, yyyy 'at' h:mm tt")</dd>
+                    </dl>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                        <div>
+                            <a asp-action="Edit" asp-route-id="@Model.CustomerId" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@Model.CustomerId" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*------------End of file------------*@

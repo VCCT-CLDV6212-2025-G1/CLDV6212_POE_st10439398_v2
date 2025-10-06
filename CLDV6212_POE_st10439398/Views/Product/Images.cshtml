@@ -1,0 +1,77 @@
+﻿@*------------Start of file------------*@
+@model IEnumerable<CLDV6212_POE_st10439398.Models.BlobInfoModel>
+@{
+    string GetFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}
+
+@{
+    ViewData["Title"] = "Product Images";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-images"></i> Product Images Gallery</h2>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Products
+                </a>
+            </div>
+
+            @if (Model != null && Model.Any())
+            {
+                <div class="row">
+                    @foreach (var blob in Model)
+                    {
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <img src="@blob.Url" class="card-img-top" alt="@blob.BlobName" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h6 class="card-title">@blob.BlobName</h6>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            Size: @GetFileSize(blob.Size)<br>
+                                            Modified: @blob.LastModified.ToString("MM/dd/yyyy")
+                                        </small>
+                                    </p>
+                                </div>
+                                <div class="card-footer">
+                                    <form asp-action="DeleteImage" method="post" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this image?');">
+                                        <input type="hidden" name="blobName" value="@blob.BlobName" />
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    <h4>No Images Found</h4>
+                    <p>No product images have been uploaded yet.</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Product with Image
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+@*------------End of file------------*@

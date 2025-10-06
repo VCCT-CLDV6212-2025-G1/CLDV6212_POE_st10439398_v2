@@ -1,0 +1,189 @@
+﻿@*------------start of file Upload.cshtml------------*@
+@model CLDV6212_POE_st10439398.Models.FileUploadModel
+
+@{
+    ViewData["Title"] = "Upload File";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-upload"></i> Upload Contract File
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>File Upload Guidelines:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Supported formats: PDF, DOC, DOCX, TXT, images</li>
+                                    <li>Maximum file size: 10MB</li>
+                                    <li>Files are securely stored in Azure Files</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="File" class="form-label">Select File</label>
+                            <input asp-for="File" class="form-control" type="file" id="fileInput"
+                                   accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif" />
+                            <span asp-validation-for="File" class="text-danger"></span>
+                            <div class="form-text">
+                                Choose a contract or document file to upload to Azure Files storage.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ContractType" class="form-label">Contract Type</label>
+                            <select asp-for="ContractType" class="form-control">
+                                <option value="General">General Contract</option>
+                                <option value="Employment">Employment Contract</option>
+                                <option value="Service">Service Agreement</option>
+                                <option value="NDA">Non-Disclosure Agreement</option>
+                                <option value="Partnership">Partnership Agreement</option>
+                                <option value="Vendor">Vendor Contract</option>
+                                <option value="Lease">Lease Agreement</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span asp-validation-for="ContractType" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">Description (Optional)</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"
+                                      placeholder="Enter a brief description of this file..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <!-- File Preview Area -->
+                        <div id="filePreview" class="mb-3" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>File Preview:</h6>
+                                    <div id="previewContent"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Files
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                <i class="fas fa-upload"></i> Upload File
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- Make sure jQuery is loaded -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // Use vanilla JavaScript as fallback if jQuery isn't available
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const preview = document.getElementById('filePreview');
+            const previewContent = document.getElementById('previewContent');
+
+            // Initially enable the button 
+            uploadBtn.disabled = false;
+
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+
+                if (file) {
+                    // Show file info
+                    let fileInfo = '<strong>File:</strong> ' + file.name + '<br>';
+                    fileInfo += '<strong>Size:</strong> ' + formatBytes(file.size) + '<br>';
+                    fileInfo += '<strong>Type:</strong> ' + file.type;
+
+                    previewContent.innerHTML = fileInfo;
+                    preview.style.display = 'block';
+
+                    // Check file size (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                        previewContent.innerHTML += '<br><span class="text-danger"><strong>Warning:</strong> File is larger than 10MB limit</span>';
+                        uploadBtn.disabled = true;
+                    } else {
+                        uploadBtn.disabled = false;
+                    }
+                } else {
+                    preview.style.display = 'none';
+                    uploadBtn.disabled = false; // Allow submission even without file 
+                }
+            });
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+        });
+
+        // jQuery version (if jQuery is available)
+        if (typeof jQuery !== 'undefined') {
+            $(document).ready(function() {
+                $('#uploadBtn').prop('disabled', false); // Enable button on page load
+
+                $('#fileInput').change(function() {
+                    var file = this.files[0];
+                    var uploadBtn = $('#uploadBtn');
+                    var preview = $('#filePreview');
+                    var previewContent = $('#previewContent');
+
+                    if (file) {
+                        // Show file info
+                        var fileInfo = '<strong>File:</strong> ' + file.name + '<br>';
+                        fileInfo += '<strong>Size:</strong> ' + formatBytes(file.size) + '<br>';
+                        fileInfo += '<strong>Type:</strong> ' + file.type;
+
+                        previewContent.html(fileInfo);
+                        preview.show();
+
+                        // Check file size (10MB limit)
+                        if (file.size > 10 * 1024 * 1024) {
+                            previewContent.append('<br><span class="text-danger"><strong>Warning:</strong> File is larger than 10MB limit</span>');
+                            uploadBtn.prop('disabled', true);
+                        } else {
+                            uploadBtn.prop('disabled', false);
+                        }
+                    } else {
+                        preview.hide();
+                        uploadBtn.prop('disabled', false);
+                    }
+                });
+
+                function formatBytes(bytes, decimals = 2) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const dm = decimals < 0 ? 0 : decimals;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                }
+            });
+        }
+    </script>
+}
+@*------------End of file------------*@

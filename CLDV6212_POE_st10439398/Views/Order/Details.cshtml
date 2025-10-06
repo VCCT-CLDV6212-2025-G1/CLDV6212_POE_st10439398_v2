@@ -1,0 +1,82 @@
+﻿@*------------Start of file------------*@
+@model CLDV6212_POE_st10439398.Models.OrderMessage
+
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-receipt"></i> Order Details
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Order ID:</dt>
+                        <dd class="col-sm-8"><code>@Model.OrderId</code></dd>
+
+                        <dt class="col-sm-4">Customer:</dt>
+                        <dd class="col-sm-8">@Model.CustomerName</dd>
+
+                        <dt class="col-sm-4">Product:</dt>
+                        <dd class="col-sm-8">@Model.ProductName</dd>
+
+                        <dt class="col-sm-4">Quantity:</dt>
+                        <dd class="col-sm-8">@Model.Quantity</dd>
+
+                        <dt class="col-sm-4">Unit Price:</dt>
+                        <dd class="col-sm-8">R @Model.UnitPrice.ToString("N2")</dd>
+
+                        <dt class="col-sm-4">Total Amount:</dt>
+                        <dd class="col-sm-8"><strong>R @Model.TotalAmount.ToString("N2")</strong></dd>
+
+                        <dt class="col-sm-4">Order Date:</dt>
+                        <dd class="col-sm-8">@Model.OrderDate.ToString("MMMM dd, yyyy 'at' h:mm tt")</dd>
+
+                        <dt class="col-sm-4">Status:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Status == "Pending")
+                            {
+                                <span class="badge bg-warning">@Model.Status</span>
+                            }
+                            else if (Model.Status == "Processing")
+                            {
+                                <span class="badge bg-info">@Model.Status</span>
+                            }
+                            else if (Model.Status == "Completed")
+                            {
+                                <span class="badge bg-success">@Model.Status</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@Model.Status</span>
+                            }
+                        </dd>
+
+                        <dt class="col-sm-4">Special Instructions:</dt>
+                        <dd class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.SpecialInstructions))
+                            {
+                                @Model.SpecialInstructions
+                            }
+                            else
+                            {
+                                <span class="text-muted">None</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@*------------End of file------------*@

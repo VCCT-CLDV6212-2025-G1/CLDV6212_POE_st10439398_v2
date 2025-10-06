@@ -1,0 +1,187 @@
+﻿@*------------sTART of file------------*@
+@model IEnumerable<CLDV6212_POE_st10439398.Models.OrderMessage>
+
+@{
+    ViewData["Title"] = "Order Processing Queue";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-list-alt"></i> Order Processing Queue</h2>
+                <div>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Orders
+                    </a>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Order
+                    </a>
+                </div>
+            </div>
+
+            <!-- Queue Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <h3>@ViewBag.QueueLength</h3>
+                            <p class="mb-0">Orders in Queue</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h3>@Model.Count()</h3>
+                            <p class="mb-0">Visible Orders</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                            <h3>@Model.Count(o => o.Status == "Pending")</h3>
+                            <p class="mb-0">Pending Orders</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Queue Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <form asp-action="ProcessNext" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-success"
+                            @(ViewBag.QueueLength == 0 ? "disabled" : "")>
+                                <i class="fas fa-play"></i> Process Next Order
+                            </button>
+                        </form>
+                        <form asp-action="ClearQueue" method="post" class="d-inline"
+                              onsubmit="return confirm('Are you sure you want to clear all orders from the queue? This action cannot be undone.');">
+                            <button type="submit" class="btn btn-danger"
+                            @(ViewBag.QueueLength == 0 ? "disabled" : "")>
+                                <i class="fas fa-trash"></i> Clear Queue
+                            </button>
+                        </form>
+                        <button class="btn btn-info" onclick="location.reload();">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue Contents -->
+            @if (Model != null && Model.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Orders in Processing Queue</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Order ID</th>
+                                        <th>Customer</th>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Total Amount</th>
+                                        <th>Order Date</th>
+                                        <th>Status</th>
+                                        <th>Special Instructions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int position = 1;
+                                    }
+                                    @foreach (var order in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @if (position == 1)
+                                                {
+                                                    <span class="badge bg-primary">Next</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">@position</span>
+                                                }
+                                            </td>
+                                            <td><code>@order.OrderId</code></td>
+                                            <td>@order.CustomerName</td>
+                                            <td>@order.ProductName</td>
+                                            <td>@order.Quantity</td>
+                                            <td><strong>R @order.TotalAmount.ToString("N2")</strong></td>
+                                            <td>@order.OrderDate.ToString("MM/dd/yyyy HH:mm")</td>
+                                            <td>
+                                                @if (order.Status == "Pending")
+                                                {
+                                                    <span class="badge bg-warning">@order.Status</span>
+                                                }
+                                                else if (order.Status == "Processing")
+                                                {
+                                                    <span class="badge bg-info">@order.Status</span>
+                                                }
+                                                else if (order.Status == "Completed")
+                                                {
+                                                    <span class="badge bg-success">@order.Status</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@order.Status</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(order.SpecialInstructions))
+                                                {
+                                                    <span class="badge bg-info" title="@order.SpecialInstructions">
+                                                        <i class="fas fa-sticky-note"></i>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">None</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        position++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    <h4>Queue is Empty</h4>
+                    <p>No orders are currently in the processing queue.</p>
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create New Order
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-refresh every 30 seconds
+    setTimeout(function(){
+        location.reload();
+    }, 30000);
+</script>
+@*------------End of file------------*@
