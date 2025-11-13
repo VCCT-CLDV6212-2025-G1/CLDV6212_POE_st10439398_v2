@@ -1,7 +1,7 @@
 ﻿//-----------------------Start Of File----------------//
 using CLDV6212_POE_st10439398.Models;
 
-namespace CLDV6212_POE_st10439398.Services.Interfaces
+namespace CLDV6212_POE_st10439398.Services.Interfaces { 
 
     /// Interface for cart service
     /// Manages shopping cart operations for customers

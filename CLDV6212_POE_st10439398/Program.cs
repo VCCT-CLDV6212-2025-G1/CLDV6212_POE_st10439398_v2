@@ -6,6 +6,7 @@ using Azure.Storage.Queues;
 using Azure.Storage.Files.Shares;
 using Azure.Data.Tables;
 using System.Globalization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,14 +32,41 @@ builder.Services.AddSingleton(serviceProvider => new TableServiceClient(connecti
 builder.Services.Configure<AzureSettings>(
     builder.Configuration.GetSection("AzureSettings"));
 
-// Register custom service interfaces with their implementations
+// Register custom service interfaces with their implementations (EXISTING)
 builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddScoped<IQueueService, QueueService>();
 builder.Services.AddScoped<IFileService, FileService>();
 
-// Register HttpClient and FunctionService - ADD THIS LINE
+// Register HttpClient and FunctionService
 builder.Services.AddHttpClient<IFunctionService, FunctionService>();
+
+// ===== NEW FOR PART 3A: SQL-BASED AUTHENTICATION & CART SERVICES =====
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+
+// ===== NEW FOR PART 3A: AUTHENTICATION CONFIGURATION =====
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
+        options.Cookie.Name = "ABCRetail.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+    });
+
+// Add Authorization services with role-based policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("CustomerOnly", policy => policy.RequireRole("Customer"));
+});
 
 // Add logging services
 builder.Services.AddLogging();
@@ -61,7 +89,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthorization();
+// ===== NEW FOR PART 3A: AUTHENTICATION & AUTHORIZATION MIDDLEWARE =====
+// CRITICAL: These must be in this exact order!
+app.UseAuthentication();    // MUST be before UseAuthorization
+app.UseAuthorization();     // MUST be after UseAuthentication
 
 app.MapControllerRoute(
     name: "default",
