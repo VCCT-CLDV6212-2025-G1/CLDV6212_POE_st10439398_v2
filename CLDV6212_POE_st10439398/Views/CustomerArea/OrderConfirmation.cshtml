@@ -1,0 +1,166 @@
+@model CLDV6212_POE_st10439398.Models.Order
+@{
+    ViewData["Title"] = "Order Confirmation - ABC Retail";
+}
+
+<style>
+    .confirmation-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 50px 0;
+        margin-bottom: 40px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .success-icon {
+        font-size: 5rem;
+        color: #28a745;
+        animation: scaleIn 0.5s ease-in-out;
+    }
+
+    @@keyframes scaleIn {
+        from {
+            transform: scale(0);
+        }
+
+        to {
+            transform: scale(1);
+        }
+    }
+</style>
+
+<div class="confirmation-header">
+    <div class="container">
+        <div class="success-icon mb-3">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h1 class="mb-2">Order Placed Successfully!</h1>
+        <p class="lead mb-0">Thank you for your order</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg mb-4">
+                <div class="card-body text-center p-5">
+                    <h2 class="mb-3">Order #@Model.OrderId</h2>
+                    <p class="lead mb-4">Your order has been received and is being processed.</p>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-envelope"></i> A confirmation email will be sent to <strong>@Model.User.Email</strong>
+                    </div>
+
+                    <div class="row mt-4 mb-4">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Order Number</h6>
+                                <h4 class="text-primary mb-0">#@Model.OrderId</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Order Date</h6>
+                                <h5 class="mb-0">@Model.OrderDate.ToString("MMM dd, yyyy")</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3">
+                                <h6 class="text-muted">Total Amount</h6>
+                                <h4 class="text-success mb-0">@Model.TotalAmountFormatted</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3">What happens next?</h5>
+                    <div class="row text-start">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <span class="badge bg-primary rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">1</span>
+                                </div>
+                                <div>
+                                    <h6>Order Review</h6>
+                                    <p class="small text-muted">We'll review your order details</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <span class="badge bg-primary rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">2</span>
+                                </div>
+                                <div>
+                                    <h6>Processing</h6>
+                                    <p class="small text-muted">Your order will be prepared</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                    <span class="badge bg-primary rounded-circle" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">3</span>
+                                </div>
+                                <div>
+                                    <h6>Delivery</h6>
+                                    <p class="small text-muted">Order will be dispatched</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <a asp-action="OrderDetails" asp-route-id="@Model.OrderId" class="btn btn-primary btn-lg">
+                            <i class="bi bi-eye"></i> View Order Details
+                        </a>
+                        <a asp-action="Dashboard" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-shop"></i> Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bag-check"></i> Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.OrderItems)
+                                {
+                                    <tr>
+                                        <td>@item.ProductName</td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end">@item.PriceFormatted</td>
+                                        <td class="text-end">@item.LineTotalFormatted</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td class="text-end"><strong class="text-success">@Model.TotalAmountFormatted</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

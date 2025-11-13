@@ -1,0 +1,107 @@
+@model List<CLDV6212_POE_st10439398.Models.Order>
+@{
+    ViewData["Title"] = "My Orders - ABC Retail";
+}
+
+<style>
+    .orders-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+</style>
+
+<div class="orders-header">
+    <div class="container">
+        <h1><i class="bi bi-clock-history"></i> My Orders</h1>
+        <p class="mb-0">View and track your order history</p>
+    </div>
+</div>
+
+<div class="container">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Shopping
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-bag-check"></i> Order History (@Model.Count orders)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.OrderByDescending(o => o.OrderDate))
+                            {
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">#@order.OrderId</strong>
+                                    </td>
+                                    <td>
+                                        <div>@order.OrderDate.ToString("MMM dd, yyyy")</div>
+                                        <small class="text-muted">@order.OrderDate.ToString("hh:mm tt")</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@order.TotalItems items</span>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">@order.TotalAmountFormatted</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-@order.StatusBadgeClass">
+                                            @order.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a asp-action="OrderDetails" asp-route-id="@order.OrderId" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-inbox" style="font-size: 6rem; color: #6c757d;"></i>
+            </div>
+            <h2 class="mb-3">No Orders Yet</h2>
+            <p class="text-muted lead mb-4">You haven't placed any orders yet. Start shopping to see your orders here!</p>
+            <a asp-action="Dashboard" class="btn btn-primary btn-lg">
+                <i class="bi bi-shop"></i> Start Shopping
+            </a>
+        </div>
+    }
+</div>

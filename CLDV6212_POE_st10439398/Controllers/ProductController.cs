@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 using CLDV6212_POE_st10439398.Models;
 using CLDV6212_POE_st10439398.Services.Interfaces;
 using System.Globalization;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CLDV6212_POE_st10439398.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class ProductController : Controller
     {
         private readonly ITableService _tableService;

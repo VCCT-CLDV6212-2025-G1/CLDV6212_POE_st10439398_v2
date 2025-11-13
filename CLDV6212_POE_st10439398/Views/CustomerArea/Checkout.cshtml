@@ -1,0 +1,141 @@
+@model CLDV6212_POE_st10439398.Models.ViewModels.CheckoutViewModel
+@{
+    ViewData["Title"] = "Checkout - ABC Retail";
+}
+
+<style>
+    .checkout-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+
+    .btn-place-order {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 15px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="checkout-header">
+    <div class="container">
+        <h1><i class="bi bi-credit-card"></i> Checkout</h1>
+        <p class="mb-0">Complete your order - @Model.UserFullName</p>
+    </div>
+</div>
+
+<div class="container">
+    <form asp-action="Checkout" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-truck"></i> Shipping Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Customer Name</label>
+                            <input type="text" class="form-control" value="@Model.UserFullName" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="text" class="form-control" value="@Model.UserEmail" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ShippingAddress" class="form-label fw-bold"></label>
+                            <textarea asp-for="ShippingAddress" class="form-control" rows="4"
+                                      placeholder="Enter your complete delivery address including street, suburb, city, and postal code"></textarea>
+                            <span asp-validation-for="ShippingAddress" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="SpecialInstructions" class="form-label fw-bold"></label>
+                            <textarea asp-for="SpecialInstructions" class="form-control" rows="3"
+                                      placeholder="e.g., Leave at front door, Call on arrival, etc. (Optional)"></textarea>
+                            <span asp-validation-for="SpecialInstructions" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> Orders are typically processed within 1-2 business days.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-receipt"></i> Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-3 pb-2 border-bottom">Items in your order:</h6>
+                        <div class="order-items mb-3" style="max-height: 300px; overflow-y: auto;">
+                            @foreach (var item in Model.CartItems)
+                            {
+                                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                    <div>
+                                        <strong>@item.ProductName</strong>
+                                        <br>
+                                        <small class="text-muted">@item.Quantity × @item.PriceFormatted</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong>@item.LineTotalFormatted</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span><strong>R @Model.TotalAmount.ToString("N2")</strong></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span class="text-success fw-bold">FREE</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax:</span>
+                            <span>R 0.00</span>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between mb-4">
+                            <strong style="font-size: 1.3rem;">Total:</strong>
+                            <strong class="text-success" style="font-size: 2rem;">R @Model.TotalAmount.ToString("N2")</strong>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-place-order w-100 mb-3">
+                            <i class="bi bi-check-circle"></i> Place Order
+                        </button>
+
+                        <a asp-action="Cart" class="btn btn-outline-secondary w-100 mb-3">
+                            <i class="bi bi-arrow-left"></i> Back to Cart
+                        </a>
+
+                        <div class="text-center mt-3 pt-3 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check"></i> Your payment information is secure
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

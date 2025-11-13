@@ -1,0 +1,254 @@
+﻿@model CLDV6212_POE_st10439398.Models.ViewModels.CustomerDashboardViewModel
+@{
+    ViewData["Title"] = "Shop - ABC Retail";
+}
+
+<style>
+    .customer-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 20px;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+
+    .product-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .product-image {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+    }
+
+    .product-image-placeholder {
+        width: 100%;
+        height: 250px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 60px;
+    }
+
+    .price-tag {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+
+    .btn-add-cart {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 600;
+        padding: 12px;
+        transition: all 0.3s;
+    }
+
+        .btn-add-cart:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+    .stat-card {
+        border-left: 4px solid #667eea;
+        transition: all 0.3s;
+    }
+
+        .stat-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+</style>
+
+<div class="customer-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">👋 Welcome, @Model.User.FirstName!</h1>
+                <p class="mb-0 lead">Browse our products and start shopping</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a asp-action="Cart" class="btn btn-light btn-lg position-relative">
+                    <i class="bi bi-cart3"></i> My Cart
+                    @if (Model.CartItemCount > 0)
+                    {
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            @Model.CartItemCount
+                        </span>
+                    }
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <h5 class="text-muted mb-2">🛒 Items in Cart</h5>
+                    <h2 class="mb-0 text-primary">@Model.CartItemCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card text-center" style="border-left-color: #764ba2;">
+                <div class="card-body">
+                    <h5 class="text-muted mb-2">📦 Your Orders</h5>
+                    <h2 class="mb-0 text-primary">@Model.RecentOrders.Count</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card text-center" style="border-left-color: #28a745;">
+                <div class="card-body">
+                    <h5 class="text-muted mb-2">🏪 Available Products</h5>
+                    <h2 class="mb-0 text-primary">@Model.AvailableProducts.Count</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="bi bi-shop"></i> Browse Products</h3>
+            <a asp-action="Orders" class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history"></i> My Orders
+            </a>
+        </div>
+
+        @if (Model.AvailableProducts.Any())
+        {
+            <div class="row g-4">
+                @foreach (var product in Model.AvailableProducts)
+                {
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="card product-card">
+                            @if (!string.IsNullOrEmpty(product.ImageUrl))
+                            {
+                                <img src="@product.ImageUrl" class="product-image" alt="@product.Name">
+                            }
+                            else
+                            {
+                                <div class="product-image-placeholder">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                            }
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-2">@product.Name</h5>
+                            <p class="card-text text-muted small flex-grow-1">
+                                @(string.IsNullOrEmpty(product.Description) ? "No description available" :
+                                                            (product.Description.Length > 80 ? product.Description.Substring(0, 80) + "..." : product.Description))
+                        </p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="price-tag">@product.PriceInRand</span>
+                                <span class="badge bg-secondary">Stock: @product.StockQuantity</span>
+                            </div>
+                            @if (product.StockQuantity > 0)
+                                    {
+                                        <form asp-action="AddToCart" method="post">
+                                            <input type="hidden" name="productId" value="@product.ProductId" />
+                                            <input type="hidden" name="productName" value="@product.Name" />
+                                            <input type="hidden" name="unitPrice" value="@product.Price" />
+                                            <input type="hidden" name="quantity" value="1" />
+                                            <button type="submit" class="btn btn-primary btn-add-cart w-100">
+                                                <i class="bi bi-cart-plus"></i> Add to Cart
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-secondary w-100" disabled>
+                                            Out of Stock
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center py-5">
+                <i class="bi bi-info-circle" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">No Products Available</h4>
+                <p>Please check back later for new products!</p>
+            </div>
+        }
+    </div>
+
+    <!-- Recent Orders -->
+    @if (Model.RecentOrders.Any())
+    {
+        <div class="card mt-5">
+            <div class="card-header bg-white">
+                <h4 class="mb-0"><i class="bi bi-clock-history"></i> Recent Orders</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model.RecentOrders.Take(5))
+                            {
+                                <tr>
+                                    <td><strong>#@order.OrderId</strong></td>
+                                    <td>@order.OrderDate.ToString("MMM dd, yyyy")</td>
+                                    <td><strong class="text-success">@order.TotalAmountFormatted</strong></td>
+                                    <td>
+                                        <span class="badge bg-@order.StatusBadgeClass">@order.Status</span>
+                                    </td>
+                                    <td>
+                                        <a asp-action="OrderDetails" asp-route-id="@order.OrderId" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a asp-action="Orders" class="btn btn-outline-primary">
+                        View All Orders <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            alert('@TempData["SuccessMessage"]');
+        });
+    </script>
+}

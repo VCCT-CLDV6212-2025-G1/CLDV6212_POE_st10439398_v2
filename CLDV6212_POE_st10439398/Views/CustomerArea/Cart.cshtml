@@ -1,0 +1,197 @@
+@model CLDV6212_POE_st10439398.Models.ViewModels.CartViewModel
+@{
+    ViewData["Title"] = "Shopping Cart - ABC Retail";
+}
+
+<style>
+    .cart-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+
+    .cart-item-row {
+        transition: background-color 0.2s;
+        padding: 20px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .cart-item-row:hover {
+            background-color: #f8f9fa;
+        }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+    }
+
+    .btn-checkout {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 15px 30px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="cart-header">
+    <div class="container">
+        <h1><i class="bi bi-cart3"></i> Your Shopping Cart</h1>
+        <p class="mb-0">@Model.TotalItems item(s) • @Model.UserFullName</p>
+    </div>
+</div>
+
+<div class="container">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.CartItems.Any())
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-bag-check"></i> Cart Items (@Model.TotalItems)</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @foreach (var item in Model.CartItems)
+                        {
+                            <div class="cart-item-row">
+                                <div class="row align-items-center">
+                                    <div class="col-md-5">
+                                        <h5 class="mb-1">@item.ProductName</h5>
+                                        <p class="text-muted small mb-0">
+                                            <i class="bi bi-tag"></i> Product ID: @item.ProductId
+                                        </p>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <p class="mb-0 fw-bold text-primary">@item.PriceFormatted</p>
+                                        <small class="text-muted">per item</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <form asp-action="UpdateQuantity" method="post" id="updateForm_@item.CartItemId">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                                            <div class="quantity-controls">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeQuantity(@item.CartItemId, -1)">-</button>
+                                                <input type="number" name="quantity" id="qty_@item.CartItemId" class="form-control form-control-sm quantity-input"
+                                                       value="@item.Quantity" min="1" max="999" onchange="submitUpdate(@item.CartItemId)" />
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeQuantity(@item.CartItemId, 1)">+</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <p class="mb-2 fw-bold text-success h5">@item.LineTotalFormatted</p>
+                                        <form asp-action="RemoveFromCart" method="post" class="d-inline"
+                                              onsubmit="return confirm('Remove @item.ProductName from cart?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i> Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <a asp-action="Dashboard" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-receipt"></i> Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal (@Model.TotalItems items):</span>
+                            <span><strong>R @Model.TotalAmount.ToString("N2")</strong></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping:</span>
+                            <span class="text-success fw-bold">FREE</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax:</span>
+                            <span>R 0.00</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-4">
+                            <strong style="font-size: 1.2rem;">Total:</strong>
+                            <strong class="text-success" style="font-size: 1.8rem;">R @Model.TotalAmount.ToString("N2")</strong>
+                        </div>
+
+                        <a asp-action="Checkout" class="btn btn-success btn-checkout w-100 mb-2">
+                            <i class="bi bi-credit-card"></i> Proceed to Checkout
+                        </a>
+
+                        <div class="text-center mt-3 pt-3 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check"></i> Secure checkout guaranteed
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="bi bi-cart-x" style="font-size: 6rem; color: #6c757d;"></i>
+            </div>
+            <h2 class="mb-3">Your cart is empty</h2>
+            <p class="text-muted lead mb-4">Looks like you haven't added anything to your cart yet.</p>
+            <a asp-action="Dashboard" class="btn btn-primary btn-lg">
+                <i class="bi bi-shop"></i> Start Shopping
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function changeQuantity(cartItemId, change) {
+            const input = document.getElementById('qty_' + cartItemId);
+            const currentValue = parseInt(input.value);
+            const newValue = currentValue + change;
+
+            if (newValue >= 1) {
+                input.value = newValue;
+                submitUpdate(cartItemId);
+            }
+        }
+
+        function submitUpdate(cartItemId) {
+            const form = document.getElementById('updateForm_' + cartItemId);
+            setTimeout(() => form.submit(), 300);
+        }
+    </script>
+}

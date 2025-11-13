@@ -1,0 +1,176 @@
+@model CLDV6212_POE_st10439398.Models.Order
+@{
+    ViewData["Title"] = $"Order #{Model.OrderId} - ABC Retail";
+}
+
+<style>
+    .order-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-radius: 10px;
+    }
+</style>
+
+<div class="order-header">
+    <div class="container">
+        <h1><i class="bi bi-receipt"></i> Order #@Model.OrderId</h1>
+        <p class="mb-0">Placed on @Model.OrderDate.ToString("MMMM dd, yyyy") at @Model.OrderDate.ToString("hh:mm tt")</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <a asp-action="Orders" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Orders
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Order Items -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bag-check"></i> Order Items</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.OrderItems)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@item.ProductName</strong>
+                                            <br>
+                                            <small class="text-muted">ID: @item.ProductId</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">@item.Quantity</span>
+                                        </td>
+                                        <td class="text-end">@item.PriceFormatted</td>
+                                        <td class="text-end">
+                                            <strong class="text-success">@item.LineTotalFormatted</strong>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Order Total:</strong></td>
+                                    <td class="text-end">
+                                        <strong class="text-success" style="font-size: 1.3rem;">@Model.TotalAmountFormatted</strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Address -->
+            @if (!string.IsNullOrEmpty(Model.ShippingAddress))
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-geo-alt"></i> Shipping Address</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">@Model.ShippingAddress</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Special Instructions -->
+            @if (!string.IsNullOrEmpty(Model.SpecialInstructions))
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Special Instructions</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">@Model.SpecialInstructions</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Order Status -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> Order Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <span class="badge bg-@Model.StatusBadgeClass" style="font-size: 1.2rem; padding: 10px 20px;">
+                            @Model.Status
+                        </span>
+                    </div>
+
+                    @if (Model.Status == "Pending")
+                    {
+                        <div class="alert alert-info small">
+                            <i class="bi bi-clock"></i> Your order is awaiting processing.
+                        </div>
+                    }
+                    else if (Model.Status == "Processing")
+                    {
+                        <div class="alert alert-warning small">
+                            <i class="bi bi-hourglass-split"></i> Your order is being prepared.
+                        </div>
+                    }
+                    else if (Model.Status == "PROCESSED" || Model.Status == "Completed")
+                    {
+                        <div class="alert alert-success small">
+                            <i class="bi bi-check-circle"></i> Your order has been processed!
+                        </div>
+                        @if (Model.ProcessedDate.HasValue)
+                        {
+                            <p class="small text-muted mb-0">
+                                Processed on: @Model.ProcessedDate.Value.ToString("MMM dd, yyyy")
+                            </p>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt"></i> Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Order Number:</span>
+                        <strong>#@Model.OrderId</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Order Date:</span>
+                        <span>@Model.OrderDate.ToString("MMM dd, yyyy")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Total Items:</span>
+                        <span>@Model.TotalItems</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>Total Amount:</strong>
+                        <strong class="text-success">@Model.TotalAmountFormatted</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

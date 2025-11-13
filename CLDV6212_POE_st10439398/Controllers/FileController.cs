@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using CLDV6212_POE_st10439398.Models;
 using CLDV6212_POE_st10439398.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CLDV6212_POE_st10439398.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class FileController : Controller
     {
         private readonly IFileService _fileService;

@@ -1,24 +1,32 @@
 ﻿//-----------------------Start of File-----------------------//
-using Microsoft.AspNetCore.Mvc;
 using CLDV6212_POE_st10439398.Models;
 using CLDV6212_POE_st10439398.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CLDV6212_POE_st10439398.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class OrderController : Controller
     {
         private readonly IQueueService _queueService;
         private readonly ITableService _tableService;
         private readonly ILogger<OrderController> _logger;
+        private readonly IOrderService _orderService; 
 
-        public OrderController(IQueueService queueService, ITableService tableService, ILogger<OrderController> logger)
+        public OrderController(
+            IQueueService queueService,
+            ITableService tableService,
+            ILogger<OrderController> logger,
+            IOrderService orderService) 
         {
             _queueService = queueService;
             _tableService = tableService;
             _logger = logger;
+            _orderService = orderService; 
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index() 
         {
             try
             {
@@ -174,6 +182,49 @@ namespace CLDV6212_POE_st10439398.Controllers
             var order = await _tableService.GetOrderAsync(id);
             if (order == null) return NotFound();
             return View(order);
+        }
+
+        // POST: Order/UpdateStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(int orderId, string newStatus)
+        {
+            try
+            {
+                var success = await _orderService.UpdateOrderStatusAsync(orderId, newStatus);
+                
+                if (success)
+                {
+                    TempData["SuccessMessage"] = $"Order #{orderId} status updated to {newStatus}!";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Failed to update order status.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating order status");
+                TempData["ErrorMessage"] = "An error occurred.";
+            }
+            
+            return RedirectToAction(nameof(Index));
+        }
+
+        // GET: Order/SqlOrders
+        public async Task<IActionResult> SqlOrders()
+        {
+            try
+            {
+                var orders = await _orderService.GetAllOrdersAsync();
+                return View("SqlOrders", orders);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading SQL orders");
+                TempData["ErrorMessage"] = "Failed to load orders.";
+                return View(new List<CLDV6212_POE_st10439398.Models.Order>());
+            }
         }
     }
 }

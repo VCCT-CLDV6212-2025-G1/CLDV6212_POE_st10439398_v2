@@ -76,6 +76,23 @@
                                                    class="btn btn-outline-info btn-sm" title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
+                                                
+                                                @if (order.Status == "Pending" || order.Status == "Processing")
+                                                {
+                                                    <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="orderId" value="@order.OrderId" />
+                                                        <input type="hidden" name="newStatus" value="PROCESSED" />
+                                                        <button type="submit" class="btn btn-sm btn-success" 
+                                                                onclick="return confirm('Mark order as PROCESSED?');">
+                                                            <i class="bi bi-check-circle"></i> Mark PROCESSED
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else if (order.Status == "PROCESSED" || order.Status == "Completed")
+                                                {
+                                                    <span class="badge bg-success">✓ Processed</span>
+                                                }
                                             </td>
                                         </tr>
                                     }
