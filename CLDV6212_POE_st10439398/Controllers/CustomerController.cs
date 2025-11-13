@@ -30,7 +30,7 @@ namespace CLDV6212_POE_st10439398.Controllers
         }
 
         public IActionResult Create() => View();
-        1`
+        
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Customer customer)
         {
