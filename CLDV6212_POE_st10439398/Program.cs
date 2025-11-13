@@ -32,7 +32,7 @@ builder.Services.AddSingleton(serviceProvider => new TableServiceClient(connecti
 builder.Services.Configure<AzureSettings>(
     builder.Configuration.GetSection("AzureSettings"));
 
-// Register custom service interfaces with their implementations (EXISTING)
+// Register custom service interfaces with their implementations 
 builder.Services.AddScoped<ITableService, TableService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
 builder.Services.AddScoped<IQueueService, QueueService>();
@@ -41,12 +41,12 @@ builder.Services.AddScoped<IFileService, FileService>();
 // Register HttpClient and FunctionService
 builder.Services.AddHttpClient<IFunctionService, FunctionService>();
 
-// ===== NEW FOR PART 3A: SQL-BASED AUTHENTICATION & CART SERVICES =====
+//  SQL-BASED AUTHENTICATION & CART SERVICES 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
-// ===== NEW FOR PART 3A: AUTHENTICATION CONFIGURATION =====
+// AUTHENTICATION CONFIGURATION
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -89,10 +89,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// ===== NEW FOR PART 3A: AUTHENTICATION & AUTHORIZATION MIDDLEWARE =====
-// CRITICAL: These must be in this exact order!
-app.UseAuthentication();    // MUST be before UseAuthorization
-app.UseAuthorization();     // MUST be after UseAuthentication
+
+
+app.UseAuthentication();    
+app.UseAuthorization();     
 
 app.MapControllerRoute(
     name: "default",
