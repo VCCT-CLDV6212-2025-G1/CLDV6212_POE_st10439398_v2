@@ -16,4 +16,8 @@
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.13.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\HealthCheck\" />
+  </ItemGroup>
+
 </Project>
