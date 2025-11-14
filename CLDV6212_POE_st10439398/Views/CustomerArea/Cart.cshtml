@@ -5,7 +5,7 @@
 
 <style>
     .cart-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1b6ec2 0%, #1861ac 100%);
         color: white;
         padding: 30px 0;
         margin-bottom: 30px;
@@ -39,8 +39,57 @@
         padding: 15px 30px;
         font-size: 18px;
         font-weight: 600;
+        color: white;
+    }
+
+        .btn-checkout:hover {
+            color: white;
+        }
+
+    /* Toast Styles */
+    .toast-container {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+    }
+
+    .custom-toast {
+        min-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 </style>
+
+<!-- Toast Container -->
+<div class="toast-container">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast custom-toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body bg-success text-white">
+                @TempData["SuccessMessage"]
+            </div>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="toast custom-toast show" role="alert">
+            <div class="toast-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body bg-danger text-white">
+                @TempData["ErrorMessage"]
+            </div>
+        </div>
+    }
+</div>
 
 <div class="cart-header">
     <div class="container">
@@ -50,22 +99,6 @@
 </div>
 
 <div class="container">
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show">
-            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
     @if (Model.CartItems.Any())
     {
         <div class="row">
@@ -103,8 +136,7 @@
                                     </div>
                                     <div class="col-md-2 text-end">
                                         <p class="mb-2 fw-bold text-success h5">@item.LineTotalFormatted</p>
-                                        <form asp-action="RemoveFromCart" method="post" class="d-inline"
-                                              onsubmit="return confirm('Remove @item.ProductName from cart?');">
+                                        <form asp-action="RemoveFromCart" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="cartItemId" value="@item.CartItemId" />
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -193,5 +225,16 @@
             const form = document.getElementById('updateForm_' + cartItemId);
             setTimeout(() => form.submit(), 300);
         }
+
+        // Auto-hide toasts
+        document.addEventListener('DOMContentLoaded', function() {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function(toast) {
+                setTimeout(function() {
+                    toast.classList.remove('show');
+                    setTimeout(function() { toast.remove(); }, 300);
+                }, 5000);
+            });
+        });
     </script>
 }

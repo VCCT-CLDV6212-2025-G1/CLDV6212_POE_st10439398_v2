@@ -28,22 +28,50 @@ namespace CLDV6212_POE_st10439398.Controllers
             _fileService = fileService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            // If user is already logged in, redirect to their dashboard
-            if (User.Identity?.IsAuthenticated == true)
+            // If user is NOT authenticated, redirect to login
+            if (User.Identity?.IsAuthenticated != true)
             {
-                if (User.IsInRole("Admin"))
+                return RedirectToAction("Login", "Account");
+            }
+
+            // User IS authenticated - show them the appropriate dashboard
+            if (User.IsInRole("Customer"))
+            {
+                // Customer goes to their shopping dashboard
+                return RedirectToAction("Dashboard", "CustomerArea");
+            }
+            else if (User.IsInRole("Admin"))
+            {
+                // Admin sees the Home/Index view with stats
+                try
                 {
-                    return RedirectToAction("Index", "Home"); // Or admin dashboard
+                    // Get stats for admin dashboard
+                    var customerCount = (await _tableService.GetAllCustomersAsync()).Count();
+                    var productCount = (await _tableService.GetAllProductsAsync()).Count();
+                    var orderCount = (await _tableService.GetAllOrdersAsync()).Count();
+                    var queueLength = await _queueService.GetQueueLengthAsync();
+
+                    ViewBag.CustomerCount = customerCount;
+                    ViewBag.ProductCount = productCount;
+                    ViewBag.OrderCount = orderCount;
+                    ViewBag.QueueLength = queueLength;
+
+                    return View(); // Show admin dashboard
                 }
-                else if (User.IsInRole("Customer"))
+                catch (Exception ex)
                 {
-                    return RedirectToAction("Dashboard", "CustomerArea");
+                    _logger.LogError(ex, "Error loading admin dashboard");
+                    ViewBag.CustomerCount = 0;
+                    ViewBag.ProductCount = 0;
+                    ViewBag.OrderCount = 0;
+                    ViewBag.QueueLength = 0;
+                    return View();
                 }
             }
 
-            // If not logged in, redirect to login page
+            // Fallback: Unknown role - redirect to login
             return RedirectToAction("Login", "Account");
         }
 

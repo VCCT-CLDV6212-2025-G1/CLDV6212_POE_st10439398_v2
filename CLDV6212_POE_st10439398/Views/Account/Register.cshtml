@@ -16,7 +16,7 @@
     }
 
     .register-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1b6ec2 0%, #1861ac 100%);
         color: white;
         padding: 30px;
         border-radius: 10px 10px 0 0;
@@ -28,22 +28,24 @@
     }
 
     .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        border-color: #1b6ec2;
+        box-shadow: 0 0 0 0.2rem rgba(27, 110, 194, 0.25);
     }
 
     .btn-register {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1b6ec2 0%, #1861ac 100%);
         border: none;
         padding: 12px;
         font-size: 16px;
         font-weight: 600;
         transition: transform 0.2s;
+        color: white;
     }
 
         .btn-register:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(27, 110, 194, 0.4);
+            color: white;
         }
 </style>
 
@@ -123,7 +125,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-register w-100 mb-3">
-                            Create Account
+                            <i class="bi bi-person-plus"></i> Create Account
                         </button>
                     </form>
 
@@ -132,7 +134,7 @@
                     <div class="text-center">
                         <p class="mb-0">
                             Already have an account?
-                            <a asp-action="Login" class="fw-bold" style="color: #667eea;">Login here</a>
+                            <a asp-action="Login" class="fw-bold" style="color: #1b6ec2;">Login here</a>
                         </p>
                     </div>
                 </div>

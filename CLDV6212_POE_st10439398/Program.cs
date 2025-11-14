@@ -1,13 +1,12 @@
 //----------Start of file-----------//
-using Azure.Data.Tables;
-using Azure.Storage.Blobs;
-using Azure.Storage.Files.Shares;
-using Azure.Storage.Queues;
-using CLDV6212_POE_st10439398.Services.Implementations;
 using CLDV6212_POE_st10439398.Services.Interfaces;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using CLDV6212_POE_st10439398.Services.Implementations;
+using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
+using Azure.Storage.Files.Shares;
+using Azure.Data.Tables;
 using System.Globalization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,13 +69,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
-
-        // CRITICAL: Configure logout behavior
-        options.Events.OnSigningOut = async context =>
-        {
-            // Delete the authentication cookie
-            await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        };
     });
 
 // Add Authorization services with role-based policies

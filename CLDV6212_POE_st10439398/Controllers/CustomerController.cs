@@ -36,6 +36,7 @@ using Microsoft.AspNetCore.Authorization;
 
         public IActionResult Create() => View();
         
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Customer customer)
         {

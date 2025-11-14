@@ -62,8 +62,16 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                         orderCommand.Parameters.AddWithValue("@ShippingAddress", (object?)shippingAddress ?? DBNull.Value);
                         orderCommand.Parameters.AddWithValue("@SpecialInstructions", (object?)specialInstructions ?? DBNull.Value);
 
-                        orderId = (int)await orderCommand.ExecuteScalarAsync();
+                        var result = await orderCommand.ExecuteScalarAsync();
+                        if (result == null || result == DBNull.Value)
+                        {
+                            throw new InvalidOperationException("Failed to retrieve new OrderId after insert.");
+                        }
+
+                        orderId = Convert.ToInt32(result);
                     }
+
+                    _logger.LogInformation("Order {OrderId} inserted successfully", orderId);
 
                     // Create order items
                     foreach (var item in cartItems)
@@ -82,25 +90,32 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                         await itemCommand.ExecuteNonQueryAsync();
                     }
 
-                    // Clear cart
-                    await _cartService.ClearCartAsync(cart.CartId);
+                    _logger.LogInformation("Order {OrderId} items inserted: {ItemCount}", orderId, cartItems.Count);
+
+                    // Clear cart items within the same transaction to ensure atomicity
+                    using (var deleteCommand = new SqlCommand("DELETE FROM CartItems WHERE CartId = @CartId", connection, transaction))
+                    {
+                        deleteCommand.Parameters.AddWithValue("@CartId", cart.CartId);
+                        await deleteCommand.ExecuteNonQueryAsync();
+                    }
 
                     transaction.Commit();
 
-                    _logger.LogInformation("Order {OrderId} created for user {UserId}", orderId, userId);
+                    _logger.LogInformation("Order {OrderId} transaction committed successfully. OrderId: {OrderIdValue}", orderId, orderId);
 
                     return (true, orderId, "Order placed successfully");
                 }
-                catch
+                catch (Exception ex)
                 {
                     transaction.Rollback();
+                    _logger.LogError(ex, "Error during order creation transaction. Rolling back.");
                     throw;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating order from cart");
-                return (false, null, "Failed to create order");
+                _logger.LogError(ex, "Error creating order from cart for user {UserId}", userId);
+                return (false, null, $"Failed to create order: {ex.Message}");
             }
         }
 

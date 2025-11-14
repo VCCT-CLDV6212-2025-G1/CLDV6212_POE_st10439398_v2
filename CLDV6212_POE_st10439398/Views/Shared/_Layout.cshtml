@@ -7,6 +7,72 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* CONSISTENT BLUE THEME FOR BOTH ADMIN AND CUSTOMER */
+        :root {
+            --primary-color: #1b6ec2;
+            --primary-hover: #1861ac;
+            --primary-gradient: linear-gradient(135deg, #1b6ec2 0%, #1861ac 100%);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient) !important;
+            border: none !important;
+            color: white !important;
+        }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, #1861ac 0%, #1b6ec2 100%) !important;
+                transform: translateY(-2px);
+            }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+
+        .badge.bg-primary {
+            background-color: var(--primary-color) !important;
+        }
+
+        /* Card styling */
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Links */
+        a {
+            color: var(--primary-color);
+        }
+
+            a:hover {
+                color: var(--primary-hover);
+            }
+
+        /* Table styling */
+        .table-hover tbody tr:hover {
+            background-color: rgba(27, 110, 194, 0.05);
+        }
+
+        /* Success/Warning/Danger colors stay the same */
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            border: none;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -81,6 +147,11 @@
                                         <i class="bi bi-file-earmark"></i> Files
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="HealthCheck" asp-action="Index">
+                                        <i class="bi bi-heart-pulse"></i> Health Check
+                                    </a>
+                                </li>
                             }
                         }
                         else
@@ -107,33 +178,39 @@
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                     <li>
                                         <h6 class="dropdown-header">
+                                            <i class="bi bi-person-badge"></i>
                                             @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
                                             @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
                                         </h6>
                                     </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="#">
-                                            <i class="bi bi-person"></i> Profile
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="#">
-                                            <i class="bi bi-gear"></i> Settings
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <span class="dropdown-item-text small text-muted">
-                                            <i class="bi bi-shield-check"></i>
-                                            Role: @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                                            <i class="bi bi-envelope"></i> @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                                        </span>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <span class="dropdown-item-text small">
+                                            <i class="bi bi-shield-check text-primary"></i>
+                                            <strong>Role:</strong> @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                                        </span>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <span class="dropdown-item disabled text-muted">
+                                            <i class="bi bi-person"></i> Profile (Coming Soon)
+                                        </span>
+                                    </li>
+                                    <li>
+                                        <span class="dropdown-item disabled text-muted">
+                                            <i class="bi bi-gear"></i> Settings (Coming Soon)
                                         </span>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="dropdown-item text-danger">
+                                            <button type="submit" class="dropdown-item text-danger" style="cursor: pointer; border: none; background: none; width: 100%; text-align: left;">
                                                 <i class="bi bi-box-arrow-right"></i> Sign Out
                                             </button>
                                         </form>

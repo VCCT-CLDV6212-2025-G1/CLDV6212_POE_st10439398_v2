@@ -8,37 +8,45 @@
         margin-top: 50px;
         margin-bottom: 50px;
     }
+
     .login-card {
         border: none;
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
         border-radius: 10px;
     }
+
     .login-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1b6ec2 0%, #1861ac 100%);
         color: white;
         padding: 30px;
         border-radius: 10px 10px 0 0;
         text-align: center;
     }
+
     .login-body {
         padding: 40px;
     }
+
     .form-control:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        border-color: #1b6ec2;
+        box-shadow: 0 0 0 0.2rem rgba(27, 110, 194, 0.25);
     }
+
     .btn-login {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1b6ec2 0%, #1861ac 100%);
         border: none;
         padding: 12px;
         font-size: 16px;
         font-weight: 600;
         transition: transform 0.2s;
+        color: white;
     }
-    .btn-login:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(27, 110, 194, 0.4);
+            color: white;
+        }
 </style>
 
 <div class="container login-container">
@@ -91,7 +99,7 @@
                         <input type="hidden" asp-for="ReturnUrl" />
 
                         <button type="submit" class="btn btn-primary btn-login w-100 mb-3">
-                            Login to Dashboard
+                            <i class="bi bi-box-arrow-in-right"></i> Login to Dashboard
                         </button>
                     </form>
 
@@ -100,7 +108,7 @@
                     <div class="text-center">
                         <p class="mb-0">
                             Don't have an account?
-                            <a asp-action="Register" class="fw-bold" style="color: #667eea;">Register here</a>
+                            <a asp-action="Register" class="fw-bold" style="color: #1b6ec2;">Register here</a>
                         </p>
                     </div>
                 </div>

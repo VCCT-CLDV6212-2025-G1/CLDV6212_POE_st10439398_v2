@@ -84,18 +84,33 @@ namespace CLDV6212_POE_st10439398.Controllers
                             SpecialInstructions = viewModel.SpecialInstructions
                         };
 
-                        var tableSaveSuccess = await _tableService.SaveOrderAsync(order);
-                        var queueSendSuccess = await _queueService.SendOrderMessageAsync(order);
+                        _logger.LogInformation("Creating order {OrderId} for customer {CustomerName}", order.OrderId, order.CustomerName);
 
-                        if (tableSaveSuccess)
+                        // Step 1: Save to Table Storage
+                        var tableSaveSuccess = await _tableService.SaveOrderAsync(order);
+                        if (!tableSaveSuccess)
                         {
-                            TempData["SuccessMessage"] = $"Order {order.OrderId} created!";
-                            return RedirectToAction(nameof(Index));
+                            _logger.LogError("Failed to save order {OrderId} to table storage", order.OrderId);
+                            TempData["ErrorMessage"] = "Failed to create order in table storage.";
+                            viewModel.Customers = (await _tableService.GetAllCustomersAsync()).ToList();
+                            viewModel.Products = (await _tableService.GetAllProductsAsync()).ToList();
+                            return View(viewModel);
                         }
-                        else
+
+                        // Step 2: Send to Queue for processing
+                        var queueSendSuccess = await _queueService.SendOrderMessageAsync(order);
+                        if (!queueSendSuccess)
                         {
-                            TempData["ErrorMessage"] = "Failed to create order.";
+                            _logger.LogError("Failed to send order {OrderId} to queue", order.OrderId);
+                            TempData["ErrorMessage"] = "Failed to queue order for processing.";
+                            viewModel.Customers = (await _tableService.GetAllCustomersAsync()).ToList();
+                            viewModel.Products = (await _tableService.GetAllProductsAsync()).ToList();
+                            return View(viewModel);
                         }
+
+                        _logger.LogInformation("Order {OrderId} created successfully and queued for processing", order.OrderId);
+                        TempData["SuccessMessage"] = $"Order {order.OrderId} created and queued for processing!";
+                        return RedirectToAction(nameof(Queue));
                     }
                     else
                     {
@@ -105,7 +120,7 @@ namespace CLDV6212_POE_st10439398.Controllers
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error creating order");
-                    TempData["ErrorMessage"] = "Error creating order.";
+                    TempData["ErrorMessage"] = $"Error creating order: {ex.Message}";
                 }
             }
 
@@ -136,28 +151,37 @@ namespace CLDV6212_POE_st10439398.Controllers
         {
             try
             {
+                _logger.LogInformation("ProcessNext called");
                 var order = await _queueService.ReceiveOrderMessageAsync();
                 if (order != null)
                 {
+                    _logger.LogInformation("Processing order {OrderId}", order.OrderId);
                     order.Status = "Processing";
                     await _tableService.UpdateOrderAsync(order);
+                    
+                    _logger.LogInformation("Updating inventory for product {ProductId}, quantity: {Quantity}", order.ProductId, -order.Quantity);
                     await _queueService.ProcessInventoryUpdateAsync(order.ProductId, -order.Quantity, "SALE", $"Order {order.OrderId}");
+                    
                     await Task.Delay(1000);
+                    
                     order.Status = "Completed";
                     await _tableService.UpdateOrderAsync(order);
-                    TempData["SuccessMessage"] = $"Order {order.OrderId} processed!";
+                    
+                    _logger.LogInformation("Order {OrderId} completed successfully", order.OrderId);
+                    TempData["SuccessMessage"] = $"Order {order.OrderId} processed successfully!";
                 }
                 else
                 {
-                    TempData["InfoMessage"] = "No orders in queue.";
+                    _logger.LogInformation("No orders in queue to process");
+                    TempData["InfoMessage"] = "No orders in queue to process.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing order");
-                TempData["ErrorMessage"] = "Failed to process order.";
+                TempData["ErrorMessage"] = $"Failed to process order: {ex.Message}";
             }
-            return RedirectToAction(nameof(Queue));
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
@@ -191,24 +215,29 @@ namespace CLDV6212_POE_st10439398.Controllers
         {
             try
             {
+                _logger.LogInformation("UpdateStatus called for orderId: {OrderId}, newStatus: {NewStatus}", orderId, newStatus);
+                
                 var success = await _orderService.UpdateOrderStatusAsync(orderId, newStatus);
                 
                 if (success)
                 {
+                    _logger.LogInformation("Order {OrderId} status updated successfully to {Status}", orderId, newStatus);
                     TempData["SuccessMessage"] = $"Order #{orderId} status updated to {newStatus}!";
                 }
                 else
                 {
+                    _logger.LogWarning("Order {OrderId} status update failed", orderId);
                     TempData["ErrorMessage"] = "Failed to update order status.";
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating order status");
-                TempData["ErrorMessage"] = "An error occurred.";
+                _logger.LogError(ex, "Error updating order status for orderId {OrderId}", orderId);
+                TempData["ErrorMessage"] = "An error occurred while updating the order.";
             }
             
-            return RedirectToAction(nameof(Index));
+            // Redirect back to SqlOrders if it's an SQL order, otherwise back to Index
+            return RedirectToAction(nameof(SqlOrders));
         }
 
         // GET: Order/SqlOrders

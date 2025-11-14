@@ -79,7 +79,7 @@ namespace CLDV6212_POE_st10439398.Controllers
             }
         }
 
-        // POST: CustomerArea/AddToCart
+        // POST: CustomerArea/AddToCart - FIXED VERSION
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddToCart(string productId, string productName, decimal unitPrice, int quantity = 1)
@@ -92,16 +92,20 @@ namespace CLDV6212_POE_st10439398.Controllers
                 if (success)
                 {
                     TempData["SuccessMessage"] = $"{productName} added to cart!";
-                    return Json(new { success = true, message = "Added to cart!" });
                 }
-
-                return Json(new { success = false, message = "Failed to add to cart" });
+                else
+                {
+                    TempData["ErrorMessage"] = "Failed to add to cart.";
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding to cart");
-                return Json(new { success = false, message = "An error occurred" });
+                TempData["ErrorMessage"] = "An error occurred while adding to cart.";
             }
+
+            // FIXED: Redirect back to dashboard instead of returning JSON
+            return RedirectToAction(nameof(Dashboard));
         }
 
         // GET: CustomerArea/Cart
@@ -232,32 +236,103 @@ namespace CLDV6212_POE_st10439398.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout(CheckoutViewModel model)
         {
+            _logger.LogInformation("Checkout POST started. ModelState valid: {IsValid}", ModelState.IsValid);
+
+            // Remove Cart and CartItems from ModelState validation since they're not posted from the form
+            ModelState.Remove("Cart");
+            ModelState.Remove("CartItems");
+
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("ModelState is invalid. Errors: {Errors}", 
+                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))));
+                
+                // Reload cart data to display on the form
+                try
+                {
+                    var userId = GetCurrentUserId();
+                    var cart = await _cartService.GetOrCreateCartAsync(userId);
+                    var user = await _authService.GetUserByIdAsync(userId);
+                    model.CartItems = await _cartService.GetCartItemsAsync(cart.CartId);
+                    model.TotalAmount = await _cartService.GetCartTotalAsync(cart.CartId);
+                    model.UserEmail = user.Email;
+                    model.UserFullName = user.FullName;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error reloading cart data for invalid ModelState");
+                }
+                
                 return View(model);
             }
 
             try
             {
                 var userId = GetCurrentUserId();
+                _logger.LogInformation("Checkout processing for user {UserId}", userId);
+                
                 var (success, orderId, message) = await _orderService.CreateOrderFromCartAsync(
                     userId,
                     model.ShippingAddress,
                     model.SpecialInstructions);
 
-                if (success)
-                {
-                    TempData["SuccessMessage"] = $"Order #{orderId} placed successfully!";
-                    return RedirectToAction(nameof(OrderConfirmation), new { id = orderId });
-                }
+                _logger.LogInformation("CreateOrderFromCart result - Success: {Success}, OrderId: {OrderId}, Message: {Message}", 
+                    success, orderId, message);
 
-                TempData["ErrorMessage"] = message;
-                return RedirectToAction(nameof(Cart));
+                if (success && orderId.HasValue)
+                {
+                    _logger.LogInformation("Order {OrderId} created successfully, redirecting to confirmation", orderId.Value);
+                    TempData["SuccessMessage"] = $"Order #{orderId} placed successfully!";
+                    
+                    // Redirect to order confirmation with the order ID
+                    return RedirectToAction(nameof(OrderConfirmation), new { id = orderId.Value });
+                }
+                else
+                {
+                    _logger.LogError("Order creation failed. Success: {Success}, OrderId: {OrderId}, Message: {Message}", 
+                        success, orderId, message);
+                    TempData["ErrorMessage"] = message ?? "Failed to create order. Please try again.";
+                    
+                    // Reload cart data and redisplay checkout
+                    try
+                    {
+                        var cart = await _cartService.GetOrCreateCartAsync(userId);
+                        var user = await _authService.GetUserByIdAsync(userId);
+                        model.CartItems = await _cartService.GetCartItemsAsync(cart.CartId);
+                        model.TotalAmount = await _cartService.GetCartTotalAsync(cart.CartId);
+                        model.UserEmail = user.Email;
+                        model.UserFullName = user.FullName;
+                    }
+                    catch (Exception reloadEx)
+                    {
+                        _logger.LogError(reloadEx, "Error reloading cart after failed order creation");
+                    }
+                    
+                    return View(model);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing checkout");
-                TempData["ErrorMessage"] = "Failed to place order. Please try again.";
+                _logger.LogError(ex, "Exception during checkout for user {UserId}. Stack trace: {StackTrace}", 
+                    GetCurrentUserId(), ex.StackTrace);
+                TempData["ErrorMessage"] = "An error occurred while processing your order. Please try again.";
+                
+                // Reload cart data and redisplay checkout
+                try
+                {
+                    var userId = GetCurrentUserId();
+                    var cart = await _cartService.GetOrCreateCartAsync(userId);
+                    var user = await _authService.GetUserByIdAsync(userId);
+                    model.CartItems = await _cartService.GetCartItemsAsync(cart.CartId);
+                    model.TotalAmount = await _cartService.GetCartTotalAsync(cart.CartId);
+                    model.UserEmail = user.Email;
+                    model.UserFullName = user.FullName;
+                }
+                catch (Exception reloadEx)
+                {
+                    _logger.LogError(reloadEx, "Error reloading cart after exception");
+                }
+                
                 return View(model);
             }
         }
@@ -267,10 +342,13 @@ namespace CLDV6212_POE_st10439398.Controllers
         {
             try
             {
+                _logger.LogInformation("OrderConfirmation requested for order ID: {OrderId}", id);
+
                 var order = await _orderService.GetOrderByIdAsync(id);
 
                 if (order == null)
                 {
+                    _logger.LogWarning("Order {OrderId} not found", id);
                     return NotFound();
                 }
 
@@ -278,14 +356,19 @@ namespace CLDV6212_POE_st10439398.Controllers
                 var userId = GetCurrentUserId();
                 if (order.UserId != userId)
                 {
+                    _logger.LogWarning("Unauthorized access to order {OrderId} by user {UserId}", id, userId);
                     return Forbid();
                 }
+
+                _logger.LogInformation("Order {OrderId} retrieved successfully. Items: {ItemCount}, Total: {Total}", 
+                    id, order.OrderItems?.Count ?? 0, order.TotalAmount);
 
                 return View(order);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading order confirmation");
+                _logger.LogError(ex, "Error loading order confirmation for order ID: {OrderId}", id);
+                TempData["ErrorMessage"] = "Failed to load order confirmation.";
                 return RedirectToAction(nameof(Dashboard));
             }
         }

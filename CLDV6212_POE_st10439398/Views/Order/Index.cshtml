@@ -5,17 +5,65 @@
     ViewData["Title"] = "Order Management";
 }
 
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                @TempData["SuccessMessage"]
+            </div>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-danger text-white">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                @TempData["ErrorMessage"]
+            </div>
+        </div>
+    }
+
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-info text-white">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong class="me-auto">Info</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                @TempData["InfoMessage"]
+            </div>
+        </div>
+    }
+</div>
+
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-shopping-cart"></i> Order Management</h2>
+                <h2><i class="fas fa-shopping-cart"></i> Order Management (Azure Table Storage)</h2>
                 <div>
                     <a asp-action="Create" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Create New Order
                     </a>
                     <a asp-action="Queue" class="btn btn-info">
                         <i class="fas fa-list"></i> View Queue
+                    </a>
+                    <a asp-action="SqlOrders" class="btn btn-secondary">
+                        <i class="fas fa-database"></i> SQL Orders
                     </a>
                 </div>
             </div>
@@ -24,7 +72,7 @@
             {
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Recent Orders in Queue</h5>
+                        <h5 class="mb-0">Orders from Azure Table Storage</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -79,19 +127,16 @@
                                                 
                                                 @if (order.Status == "Pending" || order.Status == "Processing")
                                                 {
-                                                    <form asp-action="UpdateStatus" method="post" class="d-inline">
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="orderId" value="@order.OrderId" />
-                                                        <input type="hidden" name="newStatus" value="PROCESSED" />
-                                                        <button type="submit" class="btn btn-sm btn-success" 
-                                                                onclick="return confirm('Mark order as PROCESSED?');">
-                                                            <i class="bi bi-check-circle"></i> Mark PROCESSED
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" class="btn btn-sm btn-success" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#processModal"
+                                                            onclick="document.getElementById('processOrderId').value = '@order.OrderId'">
+                                                        <i class="fas fa-play"></i> Process
+                                                    </button>
                                                 }
-                                                else if (order.Status == "PROCESSED" || order.Status == "Completed")
+                                                else if (order.Status == "Completed")
                                                 {
-                                                    <span class="badge bg-success">✓ Processed</span>
+                                                    <span class="badge bg-success">✓ Completed</span>
                                                 }
                                             </td>
                                         </tr>
@@ -107,7 +152,7 @@
                 <div class="alert alert-info text-center">
                     <i class="fas fa-info-circle"></i>
                     <h4>No Orders Found</h4>
-                    <p>No orders are currently in the queue. Create your first order to get started.</p>
+                    <p>No orders are currently in Azure Table Storage. Create your first order to get started.</p>
                     <a asp-action="Create" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Create First Order
                     </a>
@@ -116,4 +161,49 @@
         </div>
     </div>
 </div>
+
+<!-- Process Order Modal -->
+<div class="modal fade" id="processModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Process Order</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This will move the order through the processing pipeline:</p>
+                <ol>
+                    <li>Order Status → "Processing"</li>
+                    <li>Process Inventory Update (reduce stock)</li>
+                    <li>Order Status → "Completed"</li>
+                </ol>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="ProcessNext" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Proceed with Processing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-hide toasts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        var toasts = document.querySelectorAll('.toast');
+        toasts.forEach(function(toast) {
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() {
+                    toast.remove();
+                }, 300);
+            }, 5000);
+        });
+    });
+</script>
+
 @*------------End of file------------*@
