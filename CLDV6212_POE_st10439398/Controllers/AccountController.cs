@@ -24,12 +24,18 @@ namespace CLDV6212_POE_st10439398.Controllers
 
         // GET: Account/Login
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null, bool force = false)
+        public async Task<IActionResult> Login(string? returnUrl = null, bool force = false)
         {
             // If already logged in and not forced, redirect based on role
             if (User.Identity?.IsAuthenticated == true && !force)
             {
                 return RedirectBasedOnRole();
+            }
+
+            // If user wants to force login, log them out first
+            if (force && User.Identity?.IsAuthenticated == true)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
 
             ViewData["ReturnUrl"] = returnUrl;
@@ -77,7 +83,8 @@ namespace CLDV6212_POE_st10439398.Controllers
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = model.RememberMe,
-                ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(2)
+                ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(2),
+                AllowRefresh = true
             };
 
             await HttpContext.SignInAsync(
@@ -98,12 +105,18 @@ namespace CLDV6212_POE_st10439398.Controllers
 
         // GET: Account/Register
         [HttpGet]
-        public IActionResult Register(bool force = false)
+        public async Task<IActionResult> Register(bool force = false)
         {
             // If already logged in and not forced, redirect based on role
             if (User.Identity?.IsAuthenticated == true && !force)
             {
                 return RedirectBasedOnRole();
+            }
+
+            // If user wants to force register, log them out first
+            if (force && User.Identity?.IsAuthenticated == true)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
 
             return View();
@@ -146,7 +159,8 @@ namespace CLDV6212_POE_st10439398.Controllers
                 var authProperties = new AuthenticationProperties
                 {
                     IsPersistent = false,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2)
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(2),
+                    AllowRefresh = true
                 };
 
                 await HttpContext.SignInAsync(
@@ -155,14 +169,15 @@ namespace CLDV6212_POE_st10439398.Controllers
                     authProperties);
 
                 TempData["SuccessMessage"] = "Registration successful! Welcome to ABC Retail Cloud.";
+
                 // Redirect customers to CustomerArea dashboard
                 if (user.Role?.Equals("Customer", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     return RedirectToAction("Dashboard", "CustomerArea");
                 }
 
-                // Redirect admins to Admin dashboard
-                return RedirectToAction("Dashboard", "Admin");
+                // Redirect admins to Home
+                return RedirectToAction("Index", "Home");
             }
 
             return RedirectToAction(nameof(Login));
@@ -173,10 +188,25 @@ namespace CLDV6212_POE_st10439398.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+
+            // Clear authentication cookie
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            _logger.LogInformation("User logged out");
+
+            // Clear all cookies
+            foreach (var cookie in Request.Cookies.Keys)
+            {
+                Response.Cookies.Delete(cookie);
+            }
+
+            // Clear session
+            HttpContext.Session.Clear();
+
+            _logger.LogInformation("User {Email} logged out", userEmail);
+
             TempData["SuccessMessage"] = "You have been logged out successfully.";
-            return RedirectToAction("Index", "Home");
+
+            return RedirectToAction("Login", "Account");
         }
 
         // GET: Account/AccessDenied
@@ -191,7 +221,7 @@ namespace CLDV6212_POE_st10439398.Controllers
         {
             if (User.IsInRole("Admin"))
             {
-                return RedirectToAction("Dashboard", "Admin");
+                return RedirectToAction("Index", "Home");
             }
             else if (User.IsInRole("Customer"))
             {

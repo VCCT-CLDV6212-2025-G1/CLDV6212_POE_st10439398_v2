@@ -1,21 +1,19 @@
-﻿@*------------End of file------------*@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ABC Retail Cloud System</title>
+    <title>@ViewData["Title"] - ABC Retail Cloud</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    <i class="fas fa-cloud"></i> ABC Retail Cloud
+                    <i class="bi bi-shop"></i> ABC Retail Cloud
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -23,169 +21,155 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
-                                <i class="fas fa-home"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="customerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-users"></i> Customers
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="customerDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Customer" asp-action="Index">
-                                        <i class="fas fa-list"></i> View All
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            @if (User.IsInRole("Customer"))
+                            {
+                                <!-- CUSTOMER NAVIGATION -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="CustomerArea" asp-action="Dashboard">
+                                        <i class="bi bi-house-door"></i> Shop
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Customer" asp-action="Create">
-                                        <i class="fas fa-plus"></i> Add New
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="CustomerArea" asp-action="Cart">
+                                        <i class="bi bi-cart"></i> Cart
                                     </a>
                                 </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="productDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-box"></i> Products
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="productDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Product" asp-action="Index">
-                                        <i class="fas fa-list"></i> View All
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="CustomerArea" asp-action="Orders">
+                                        <i class="bi bi-clock-history"></i> My Orders
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Product" asp-action="Create">
-                                        <i class="fas fa-plus"></i> Add New
+                            }
+                            else if (User.IsInRole("Admin"))
+                            {
+                                <!-- ADMIN NAVIGATION -->
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
+                                        <i class="bi bi-speedometer2"></i> Dashboard
                                     </a>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Product" asp-action="Images">
-                                        <i class="fas fa-images"></i> Manage Images
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Customer" asp-action="Index">
+                                        <i class="bi bi-people"></i> Customers
                                     </a>
                                 </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="orderDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-shopping-cart"></i> Orders
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="orderDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Order" asp-action="Index">
-                                        <i class="fas fa-list"></i> View All
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Product" asp-action="Index">
+                                        <i class="bi bi-box-seam"></i> Products
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Order" asp-action="Create">
-                                        <i class="fas fa-plus"></i> Create New
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle text-dark" href="#" id="ordersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-receipt"></i> Orders
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="ordersDropdown">
+                                        <li><a class="dropdown-item" asp-controller="Order" asp-action="Index">All Orders</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Order" asp-action="SqlOrders">Customer Orders (SQL)</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Order" asp-action="Queue">Order Queue</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Order" asp-action="Create">Create Order</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Inventory" asp-action="Index">
+                                        <i class="bi bi-boxes"></i> Inventory
                                     </a>
                                 </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Order" asp-action="Queue">
-                                        <i class="fas fa-list-alt"></i> Processing Queue
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="File" asp-action="Index">
+                                        <i class="bi bi-file-earmark"></i> Files
                                     </a>
                                 </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="fileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-file-alt"></i> Files
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="fileDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="File" asp-action="Index">
-                                        <i class="fas fa-list"></i> View All
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="File" asp-action="Upload">
-                                        <i class="fas fa-upload"></i> Upload New
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="inventoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-warehouse"></i> Inventory
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="inventoryDropdown">
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Inventory" asp-action="Index">
-                                        <i class="fas fa-list"></i> Queue Management
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Inventory" asp-action="Adjust">
-                                        <i class="fas fa-edit"></i> Adjust Stock
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-controller="Inventory" asp-action="Restock">
-                                        <i class="fas fa-box"></i> Restock Products
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                            }
+                        }
+                        else
+                        {
+                            <!-- PUBLIC NAVIGATION (NOT LOGGED IN) -->
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-house-door"></i> Home
+                                </a>
+                            </li>
+                        }
                     </ul>
+
+                    <!-- RIGHT SIDE NAVIGATION -->
                     <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">
-                                <i class="fas fa-shield-alt"></i> Privacy
-                            </a>
-                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <!-- USER PROFILE DROPDOWN -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i>
+                                    @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li>
+                                        <h6 class="dropdown-header">
+                                            @User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                                            @User.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value
+                                        </h6>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="bi bi-person"></i> Profile
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="bi bi-gear"></i> Settings
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <span class="dropdown-item-text small text-muted">
+                                            <i class="bi bi-shield-check"></i>
+                                            Role: @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+                                        </span>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-box-arrow-right"></i> Sign Out
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <!-- LOGIN/REGISTER LINKS -->
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">
+                                    <i class="bi bi-box-arrow-in-right"></i> Login
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">
+                                    <i class="bi bi-person-plus"></i> Register
+                                </a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
 
-    <!-- Alert Messages -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
-            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-    @if (TempData["InfoMessage"] != null)
-    {
-        <div class="alert alert-info alert-dismissible fade show m-3" role="alert">
-            <i class="fas fa-info-circle"></i> @TempData["InfoMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
 
-    <main role="main" class="pb-3">
-        @RenderBody()
-    </main>
-
-    <footer class="border-top footer text-muted bg-light">
+    <footer class="border-top footer text-muted">
         <div class="container">
-            <div class="row py-3">
-                <div class="col-md-6">
-                    <p>&copy; 2024 - ABC Retail Cloud System - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></p>
-                </div>
-                <div class="col-md-6 text-end">
-                    <small>
-                        <i class="fas fa-server text-primary"></i> Powered by Microsoft Azure |
-                        <i class="fas fa-database text-info"></i> Tables |
-                        <i class="fas fa-images text-success"></i> Blobs |
-                        <i class="fas fa-list-alt text-warning"></i> Queues |
-                        <i class="fas fa-folder text-secondary"></i> Files
-                    </small>
-                </div>
-            </div>
+            &copy; 2025 - ABC Retail Cloud - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
 
@@ -195,4 +179,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-@*------------End of file------------*@

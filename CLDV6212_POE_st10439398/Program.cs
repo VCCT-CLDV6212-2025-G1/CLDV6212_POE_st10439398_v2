@@ -1,17 +1,28 @@
 //----------Start of file-----------//
-using CLDV6212_POE_st10439398.Services.Interfaces;
-using CLDV6212_POE_st10439398.Services.Implementations;
-using Azure.Storage.Blobs;
-using Azure.Storage.Queues;
-using Azure.Storage.Files.Shares;
 using Azure.Data.Tables;
-using System.Globalization;
+using Azure.Storage.Blobs;
+using Azure.Storage.Files.Shares;
+using Azure.Storage.Queues;
+using CLDV6212_POE_st10439398.Services.Implementations;
+using CLDV6212_POE_st10439398.Services.Interfaces;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add Session support
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 // Get Azure Storage connection string from configuration
 var connectionString = builder.Configuration.GetConnectionString("AzureStorage");
@@ -59,6 +70,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.HttpOnly = true;
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Lax;
+
+        // CRITICAL: Configure logout behavior
+        options.Events.OnSigningOut = async context =>
+        {
+            // Delete the authentication cookie
+            await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        };
     });
 
 // Add Authorization services with role-based policies
@@ -89,14 +107,15 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Add Session BEFORE Authentication
+app.UseSession();
 
-
-app.UseAuthentication();    
-app.UseAuthorization();     
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Initialize tables on startup
 using (var scope = app.Services.CreateScope())

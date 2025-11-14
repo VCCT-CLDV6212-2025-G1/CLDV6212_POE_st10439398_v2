@@ -2,47 +2,46 @@
 using CLDV6212_POE_st10439398.Models;
 using CLDV6212_POE_st10439398.Services.Interfaces;
 using Microsoft.Data.SqlClient;
-using System.Data;
 
 namespace CLDV6212_POE_st10439398.Services.Implementations
 {
-  /// Service for managing orders in SQL database
+
+    /// Order service for managing order operations
 
     public class OrderService : IOrderService
     {
         private readonly string _connectionString;
-        private readonly ILogger<OrderService> _logger;
         private readonly ICartService _cartService;
+        private readonly ILogger<OrderService> _logger;
 
-        public OrderService(IConfiguration configuration, ILogger<OrderService> logger, ICartService cartService)
+        public OrderService(IConfiguration configuration, ICartService cartService, ILogger<OrderService> logger)
         {
             _connectionString = configuration.GetConnectionString("SqlConnection")
                 ?? throw new ArgumentNullException("SqlConnection string not found");
-            _logger = logger;
             _cartService = cartService;
+            _logger = logger;
         }
-        /// Creates an order from user's cart
 
+  
+        /// Creates an order from cart
+   
         public async Task<(bool Success, int? OrderId, string Message)> CreateOrderFromCartAsync(int userId, string? shippingAddress, string? specialInstructions)
         {
             try
             {
-                // Get user's cart
                 var cart = await _cartService.GetOrCreateCartAsync(userId);
                 var cartItems = await _cartService.GetCartItemsAsync(cart.CartId);
 
-                if (cartItems == null || !cartItems.Any())
+                if (!cartItems.Any())
                 {
                     return (false, null, "Cart is empty");
                 }
 
-                // Calculate total
-                var totalAmount = cartItems.Sum(item => item.Quantity * item.UnitPrice);
+                var totalAmount = await _cartService.GetCartTotalAsync(cart.CartId);
 
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Begin transaction
                 using var transaction = connection.BeginTransaction();
 
                 try
@@ -66,14 +65,14 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                         orderId = (int)await orderCommand.ExecuteScalarAsync();
                     }
 
-                    // Insert order items
-                    var orderItemQuery = @"
-                        INSERT INTO OrderItems (OrderId, ProductId, ProductName, Quantity, UnitPrice)
-                        VALUES (@OrderId, @ProductId, @ProductName, @Quantity, @UnitPrice)";
-
+                    // Create order items
                     foreach (var item in cartItems)
                     {
-                        using var itemCommand = new SqlCommand(orderItemQuery, connection, transaction);
+                        var itemQuery = @"
+                            INSERT INTO OrderItems (OrderId, ProductId, ProductName, Quantity, UnitPrice)
+                            VALUES (@OrderId, @ProductId, @ProductName, @Quantity, @UnitPrice)";
+
+                        using var itemCommand = new SqlCommand(itemQuery, connection, transaction);
                         itemCommand.Parameters.AddWithValue("@OrderId", orderId);
                         itemCommand.Parameters.AddWithValue("@ProductId", item.ProductId);
                         itemCommand.Parameters.AddWithValue("@ProductName", item.ProductName);
@@ -83,15 +82,14 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                         await itemCommand.ExecuteNonQueryAsync();
                     }
 
-                    // Commit transaction
-                    transaction.Commit();
-
-                    // Clear cart after successful order creation
+                    // Clear cart
                     await _cartService.ClearCartAsync(cart.CartId);
 
-                    _logger.LogInformation("Order {OrderId} created successfully for user {UserId}", orderId, userId);
+                    transaction.Commit();
 
-                    return (true, orderId, "Order created successfully");
+                    _logger.LogInformation("Order {OrderId} created for user {UserId}", orderId, userId);
+
+                    return (true, orderId, "Order placed successfully");
                 }
                 catch
                 {
@@ -101,13 +99,13 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating order for user {UserId}", userId);
-                return (false, null, "An error occurred while creating the order");
+                _logger.LogError(ex, "Error creating order from cart");
+                return (false, null, "Failed to create order");
             }
         }
 
 
-        /// Gets order by ID with items
+        /// Gets order by ID
 
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
@@ -116,7 +114,12 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = "SELECT * FROM Orders WHERE OrderId = @OrderId";
+                var query = @"
+                    SELECT o.*, u.Email, u.FirstName, u.LastName, u.Phone
+                    FROM Orders o
+                    INNER JOIN Users u ON o.UserId = u.UserId
+                    WHERE o.OrderId = @OrderId";
+
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@OrderId", orderId);
 
@@ -126,7 +129,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                     var order = MapOrderFromReader(reader);
                     reader.Close();
 
-                    // Load order items
+                    // Get order items
                     order.OrderItems = await GetOrderItemsAsync(orderId);
 
                     return order;
@@ -136,14 +139,14 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving order {OrderId}", orderId);
+                _logger.LogError(ex, "Error getting order {OrderId}", orderId);
                 return null;
             }
         }
 
 
-        /// Gets all orders for a user
-
+        /// Gets orders for a user
+ 
         public async Task<List<Order>> GetUserOrdersAsync(int userId)
         {
             var orders = new List<Order>();
@@ -153,7 +156,13 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = "SELECT * FROM Orders WHERE UserId = @UserId ORDER BY OrderDate DESC";
+                var query = @"
+                    SELECT o.*, u.Email, u.FirstName, u.LastName, u.Phone
+                    FROM Orders o
+                    INNER JOIN Users u ON o.UserId = u.UserId
+                    WHERE o.UserId = @UserId
+                    ORDER BY o.OrderDate DESC";
+
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@UserId", userId);
 
@@ -165,15 +174,15 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving orders for user {UserId}", userId);
+                _logger.LogError(ex, "Error getting orders for user {UserId}", userId);
             }
 
             return orders;
         }
 
-
-        /// Gets all orders (admin function)
- 
+  
+        /// Gets all orders
+    
         public async Task<List<Order>> GetAllOrdersAsync()
         {
             var orders = new List<Order>();
@@ -183,7 +192,12 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = "SELECT * FROM Orders ORDER BY OrderDate DESC";
+                var query = @"
+                    SELECT o.*, u.Email, u.FirstName, u.LastName, u.Phone
+                    FROM Orders o
+                    INNER JOIN Users u ON o.UserId = u.UserId
+                    ORDER BY o.OrderDate DESC";
+
                 using var command = new SqlCommand(query, connection);
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -194,7 +208,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving all orders");
+                _logger.LogError(ex, "Error getting all orders");
             }
 
             return orders;
@@ -202,7 +216,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
 
 
         /// Gets orders by status
-
+ 
         public async Task<List<Order>> GetOrdersByStatusAsync(string status)
         {
             var orders = new List<Order>();
@@ -212,7 +226,13 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = "SELECT * FROM Orders WHERE Status = @Status ORDER BY OrderDate DESC";
+                var query = @"
+                    SELECT o.*, u.Email, u.FirstName, u.LastName, u.Phone
+                    FROM Orders o
+                    INNER JOIN Users u ON o.UserId = u.UserId
+                    WHERE o.Status = @Status
+                    ORDER BY o.OrderDate DESC";
+
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Status", status);
 
@@ -224,7 +244,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving orders with status {Status}", status);
+                _logger.LogError(ex, "Error getting orders by status");
             }
 
             return orders;
@@ -262,12 +282,12 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating order {OrderId} status", orderId);
+                _logger.LogError(ex, "Error updating order status");
                 return false;
             }
         }
 
-        /// Gets order items for an order
+          /// Gets order items
 
         public async Task<List<OrderItem>> GetOrderItemsAsync(int orderId)
         {
@@ -287,25 +307,24 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 {
                     items.Add(new OrderItem
                     {
-                        OrderItemId = reader.GetInt32("OrderItemId"),
-                        OrderId = reader.GetInt32("OrderId"),
-                        ProductId = reader.GetString("ProductId"),
-                        ProductName = reader.GetString("ProductName"),
-                        Quantity = reader.GetInt32("Quantity"),
-                        UnitPrice = reader.GetDecimal("UnitPrice")
+                        OrderItemId = reader.GetInt32(reader.GetOrdinal("OrderItemId")),
+                        OrderId = reader.GetInt32(reader.GetOrdinal("OrderId")),
+                        ProductId = reader.GetString(reader.GetOrdinal("ProductId")),
+                        ProductName = reader.GetString(reader.GetOrdinal("ProductName")),
+                        Quantity = reader.GetInt32(reader.GetOrdinal("Quantity")),
+                        UnitPrice = reader.GetDecimal(reader.GetOrdinal("UnitPrice"))
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving order items for order {OrderId}", orderId);
+                _logger.LogError(ex, "Error getting order items");
             }
 
             return items;
         }
 
-
-        /// Cancels an order
+      /// Cancels an order
 
         public async Task<bool> CancelOrderAsync(int orderId)
         {
@@ -313,7 +332,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
         }
 
 
-        /// Gets total revenue from completed/processed orders
+        /// Gets total revenue
 
         public async Task<decimal> GetTotalRevenueAsync()
         {
@@ -325,11 +344,12 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 var query = "SELECT ISNULL(SUM(TotalAmount), 0) FROM Orders WHERE Status IN ('Completed', 'PROCESSED')";
                 using var command = new SqlCommand(query, connection);
 
-                return (decimal)await command.ExecuteScalarAsync();
+                var total = (decimal)await command.ExecuteScalarAsync();
+                return total;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating total revenue");
+                _logger.LogError(ex, "Error getting total revenue");
                 return 0;
             }
         }
@@ -348,30 +368,39 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Status", status);
 
-                return (int)await command.ExecuteScalarAsync();
+                var count = (int)await command.ExecuteScalarAsync();
+                return count;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting order count for status {Status}", status);
+                _logger.LogError(ex, "Error getting order count");
                 return 0;
             }
         }
 
 
-        /// Maps SqlDataReader to Order object
+        /// Maps order from reader
 
         private Order MapOrderFromReader(SqlDataReader reader)
         {
             return new Order
             {
-                OrderId = reader.GetInt32("OrderId"),
-                UserId = reader.GetInt32("UserId"),
-                OrderDate = reader.GetDateTime("OrderDate"),
-                Status = reader.GetString("Status"),
-                TotalAmount = reader.GetDecimal("TotalAmount"),
-                ShippingAddress = reader.IsDBNull("ShippingAddress") ? null : reader.GetString("ShippingAddress"),
-                SpecialInstructions = reader.IsDBNull("SpecialInstructions") ? null : reader.GetString("SpecialInstructions"),
-                ProcessedDate = reader.IsDBNull("ProcessedDate") ? null : reader.GetDateTime("ProcessedDate")
+                OrderId = reader.GetInt32(reader.GetOrdinal("OrderId")),
+                UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                OrderDate = reader.GetDateTime(reader.GetOrdinal("OrderDate")),
+                Status = reader.GetString(reader.GetOrdinal("Status")),
+                TotalAmount = reader.GetDecimal(reader.GetOrdinal("TotalAmount")),
+                ShippingAddress = reader.IsDBNull(reader.GetOrdinal("ShippingAddress")) ? null : reader.GetString(reader.GetOrdinal("ShippingAddress")),
+                SpecialInstructions = reader.IsDBNull(reader.GetOrdinal("SpecialInstructions")) ? null : reader.GetString(reader.GetOrdinal("SpecialInstructions")),
+                ProcessedDate = reader.IsDBNull(reader.GetOrdinal("ProcessedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ProcessedDate")),
+                User = new User
+                {
+                    UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                    Email = reader.GetString(reader.GetOrdinal("Email")),
+                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                    Phone = reader.IsDBNull(reader.GetOrdinal("Phone")) ? null : reader.GetString(reader.GetOrdinal("Phone"))
+                }
             };
         }
     }
