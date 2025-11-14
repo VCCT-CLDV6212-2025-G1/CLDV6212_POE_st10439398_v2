@@ -1,9 +1,9 @@
 ﻿//-----------------------Start of File-----------------------//
-using Microsoft.AspNetCore.Mvc;
 using CLDV6212_POE_st10439398.Models;
 using CLDV6212_POE_st10439398.Services.Interfaces;
-using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace CLDV6212_POE_st10439398.Controllers
 {

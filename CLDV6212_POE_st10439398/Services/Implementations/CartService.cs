@@ -2,12 +2,11 @@
 using CLDV6212_POE_st10439398.Models;
 using CLDV6212_POE_st10439398.Services.Interfaces;
 using Microsoft.Data.SqlClient;
-using System.Data;
 
 namespace CLDV6212_POE_st10439398.Services.Implementations
 {
 
-    /// Service for managing shopping cart operations
+    /// Cart service for managing shopping cart operations
 
     public class CartService : ICartService
     {
@@ -21,9 +20,9 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             _logger = logger;
         }
 
-
+      
         /// Gets or creates a cart for a user
-
+    
         public async Task<Cart> GetOrCreateCartAsync(int userId)
         {
             try
@@ -31,7 +30,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Try to get existing cart
+                // Check if cart exists
                 var query = "SELECT * FROM Carts WHERE UserId = @UserId";
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@UserId", userId);
@@ -41,17 +40,18 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 {
                     return new Cart
                     {
-                        CartId = reader.GetInt32("CartId"),
-                        UserId = reader.GetInt32("UserId"),
-                        CreatedDate = reader.GetDateTime("CreatedDate"),
-                        LastModifiedDate = reader.GetDateTime("LastModifiedDate")
+                        CartId = reader.GetInt32(reader.GetOrdinal("CartId")),
+                        UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                        CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
+                        LastModifiedDate = reader.GetDateTime(reader.GetOrdinal("LastModifiedDate"))
                     };
                 }
+
                 reader.Close();
 
-                // Create new cart if doesn't exist
+                // Create new cart
                 var insertQuery = @"
-                    INSERT INTO Carts (UserId, CreatedDate, LastModifiedDate) 
+                    INSERT INTO Carts (UserId, CreatedDate, LastModifiedDate)
                     VALUES (@UserId, @CreatedDate, @LastModifiedDate);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
@@ -61,8 +61,6 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 insertCommand.Parameters.AddWithValue("@LastModifiedDate", DateTime.UtcNow);
 
                 var cartId = (int)await insertCommand.ExecuteScalarAsync();
-
-                _logger.LogInformation("Created new cart {CartId} for user {UserId}", cartId, userId);
 
                 return new Cart
                 {
@@ -74,14 +72,14 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting or creating cart for user {UserId}", userId);
+                _logger.LogError(ex, "Error getting/creating cart for user {UserId}", userId);
                 throw;
             }
         }
 
 
         /// Gets cart by ID
- 
+
         public async Task<Cart?> GetCartByIdAsync(int cartId)
         {
             try
@@ -96,31 +94,26 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var reader = await command.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
-                    var cart = new Cart
+                    return new Cart
                     {
-                        CartId = reader.GetInt32("CartId"),
-                        UserId = reader.GetInt32("UserId"),
-                        CreatedDate = reader.GetDateTime("CreatedDate"),
-                        LastModifiedDate = reader.GetDateTime("LastModifiedDate")
+                        CartId = reader.GetInt32(reader.GetOrdinal("CartId")),
+                        UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                        CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
+                        LastModifiedDate = reader.GetDateTime(reader.GetOrdinal("LastModifiedDate"))
                     };
-                    reader.Close();
-
-                    // Load cart items
-                    cart.CartItems = await GetCartItemsAsync(cartId);
-                    return cart;
                 }
 
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving cart {CartId}", cartId);
+                _logger.LogError(ex, "Error getting cart {CartId}", cartId);
                 return null;
             }
         }
 
 
-        /// Adds product to cart
+        /// Adds a product to cart
 
         public async Task<bool> AddToCartAsync(int userId, string productId, string productName, decimal unitPrice, int quantity = 1)
         {
@@ -131,7 +124,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Check if product already in cart
+                // Check if item already exists in cart
                 var checkQuery = "SELECT CartItemId, Quantity FROM CartItems WHERE CartId = @CartId AND ProductId = @ProductId";
                 using var checkCommand = new SqlCommand(checkQuery, connection);
                 checkCommand.Parameters.AddWithValue("@CartId", cart.CartId);
@@ -140,9 +133,9 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var reader = await checkCommand.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
-                    // Update existing item
-                    var cartItemId = reader.GetInt32("CartItemId");
-                    var currentQuantity = reader.GetInt32("Quantity");
+                    // Item exists, update quantity
+                    var cartItemId = reader.GetInt32(0);
+                    var currentQuantity = reader.GetInt32(1);
                     reader.Close();
 
                     var updateQuery = "UPDATE CartItems SET Quantity = @Quantity WHERE CartItemId = @CartItemId";
@@ -150,8 +143,6 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                     updateCommand.Parameters.AddWithValue("@Quantity", currentQuantity + quantity);
                     updateCommand.Parameters.AddWithValue("@CartItemId", cartItemId);
                     await updateCommand.ExecuteNonQueryAsync();
-
-                    _logger.LogInformation("Updated quantity for product {ProductId} in cart {CartId}", productId, cart.CartId);
                 }
                 else
                 {
@@ -169,9 +160,8 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                     insertCommand.Parameters.AddWithValue("@Quantity", quantity);
                     insertCommand.Parameters.AddWithValue("@UnitPrice", unitPrice);
                     insertCommand.Parameters.AddWithValue("@AddedDate", DateTime.UtcNow);
-                    await insertCommand.ExecuteNonQueryAsync();
 
-                    _logger.LogInformation("Added product {ProductId} to cart {CartId}", productId, cart.CartId);
+                    await insertCommand.ExecuteNonQueryAsync();
                 }
 
                 // Update cart last modified date
@@ -181,7 +171,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding product {ProductId} to cart for user {UserId}", productId, userId);
+                _logger.LogError(ex, "Error adding to cart");
                 return false;
             }
         }
@@ -193,14 +183,13 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
                 if (quantity <= 0)
                 {
-                    // Remove item if quantity is 0 or less
                     return await RemoveFromCartAsync(cartItemId);
                 }
+
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
                 var query = "UPDATE CartItems SET Quantity = @Quantity WHERE CartItemId = @CartItemId";
                 using var command = new SqlCommand(query, connection);
@@ -208,29 +197,16 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 command.Parameters.AddWithValue("@CartItemId", cartItemId);
 
                 var rowsAffected = await command.ExecuteNonQueryAsync();
-
-                if (rowsAffected > 0)
-                {
-                    // Get cart ID to update modified date
-                    var getCartIdQuery = "SELECT CartId FROM CartItems WHERE CartItemId = @CartItemId";
-                    using var getCartIdCommand = new SqlCommand(getCartIdQuery, connection);
-                    getCartIdCommand.Parameters.AddWithValue("@CartItemId", cartItemId);
-                    var cartId = (int)await getCartIdCommand.ExecuteScalarAsync();
-
-                    await UpdateCartModifiedDateAsync(cartId);
-                }
-
                 return rowsAffected > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating cart item {CartItemId} quantity", cartItemId);
+                _logger.LogError(ex, "Error updating cart item quantity");
                 return false;
             }
         }
 
-
-        /// Removes item from cart
+       /// Removes item from cart
 
         public async Task<bool> RemoveFromCartAsync(int cartItemId)
         {
@@ -239,35 +215,22 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Get cart ID before deleting
-                var getCartIdQuery = "SELECT CartId FROM CartItems WHERE CartItemId = @CartItemId";
-                using var getCartIdCommand = new SqlCommand(getCartIdQuery, connection);
-                getCartIdCommand.Parameters.AddWithValue("@CartItemId", cartItemId);
-                var cartId = (int?)await getCartIdCommand.ExecuteScalarAsync();
-
-                // Delete cart item
                 var query = "DELETE FROM CartItems WHERE CartItemId = @CartItemId";
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CartItemId", cartItemId);
 
                 var rowsAffected = await command.ExecuteNonQueryAsync();
-
-                if (rowsAffected > 0 && cartId.HasValue)
-                {
-                    await UpdateCartModifiedDateAsync(cartId.Value);
-                }
-
                 return rowsAffected > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error removing cart item {CartItemId}", cartItemId);
+                _logger.LogError(ex, "Error removing from cart");
                 return false;
             }
         }
 
 
-        /// Gets all items in a cart
+        /// Gets all cart items
 
         public async Task<List<CartItem>> GetCartItemsAsync(int cartId)
         {
@@ -287,26 +250,25 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 {
                     items.Add(new CartItem
                     {
-                        CartItemId = reader.GetInt32("CartItemId"),
-                        CartId = reader.GetInt32("CartId"),
-                        ProductId = reader.GetString("ProductId"),
-                        ProductName = reader.GetString("ProductName"),
-                        Quantity = reader.GetInt32("Quantity"),
-                        UnitPrice = reader.GetDecimal("UnitPrice"),
-                        AddedDate = reader.GetDateTime("AddedDate")
+                        CartItemId = reader.GetInt32(reader.GetOrdinal("CartItemId")),
+                        CartId = reader.GetInt32(reader.GetOrdinal("CartId")),
+                        ProductId = reader.GetString(reader.GetOrdinal("ProductId")),
+                        ProductName = reader.GetString(reader.GetOrdinal("ProductName")),
+                        Quantity = reader.GetInt32(reader.GetOrdinal("Quantity")),
+                        UnitPrice = reader.GetDecimal(reader.GetOrdinal("UnitPrice")),
+                        AddedDate = reader.GetDateTime(reader.GetOrdinal("AddedDate"))
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving cart items for cart {CartId}", cartId);
+                _logger.LogError(ex, "Error getting cart items");
             }
 
             return items;
         }
 
-
-        /// Clears all items from cart
+      /// Clears cart
 
         public async Task<bool> ClearCartAsync(int cartId)
         {
@@ -320,21 +282,18 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 command.Parameters.AddWithValue("@CartId", cartId);
 
                 await command.ExecuteNonQueryAsync();
-                await UpdateCartModifiedDateAsync(cartId);
-
-                _logger.LogInformation("Cleared cart {CartId}", cartId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error clearing cart {CartId}", cartId);
+                _logger.LogError(ex, "Error clearing cart");
                 return false;
             }
         }
 
-
-        /// Gets cart item count for a user
-
+ 
+        /// Gets cart item count
+ 
         public async Task<int> GetCartItemCountAsync(int userId)
         {
             try
@@ -348,17 +307,18 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CartId", cart.CartId);
 
-                return (int)await command.ExecuteScalarAsync();
+                var count = (int)await command.ExecuteScalarAsync();
+                return count;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting cart item count for user {UserId}", userId);
+                _logger.LogError(ex, "Error getting cart count");
                 return 0;
             }
         }
 
-
-        /// Gets cart total amount
+    
+        /// Gets cart total
 
         public async Task<decimal> GetCartTotalAsync(int cartId)
         {
@@ -371,17 +331,18 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CartId", cartId);
 
-                return (decimal)await command.ExecuteScalarAsync();
+                var total = (decimal)await command.ExecuteScalarAsync();
+                return total;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting cart total for cart {CartId}", cartId);
+                _logger.LogError(ex, "Error getting cart total");
                 return 0;
             }
         }
 
 
-        /// Updates cart last modified date
+        /// Updates cart modified date
 
         private async Task UpdateCartModifiedDateAsync(int cartId)
         {
@@ -399,7 +360,7 @@ namespace CLDV6212_POE_st10439398.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating cart modified date for cart {CartId}", cartId);
+                _logger.LogError(ex, "Error updating cart modified date");
             }
         }
     }

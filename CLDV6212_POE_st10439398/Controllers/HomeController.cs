@@ -28,69 +28,23 @@ namespace CLDV6212_POE_st10439398.Controllers
             _fileService = fileService;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            // Initialize with proper typed empty collections
-            ViewBag.CustomerCount = 0;
-            ViewBag.ProductCount = 0;
-            ViewBag.QueueLength = 0;
-            ViewBag.FileCount = 0;
-            ViewBag.BlobCount = 0;
-            ViewBag.RecentCustomers = Enumerable.Empty<Customer>();
-            ViewBag.RecentProducts = Enumerable.Empty<Product>();
-            ViewBag.ErrorMessage = "";
-
-            try
+            // If user is already logged in, redirect to their dashboard
+            if (User.Identity?.IsAuthenticated == true)
             {
-                // Initialize tables if they don't exist
-                await _tableService.CreateTablesIfNotExistsAsync();
-
-                // Get counts for dashboard
-                var customers = await _tableService.GetAllCustomersAsync();
-                var products = await _tableService.GetAllProductsAsync();
-                var queueLength = await _queueService.GetQueueLengthAsync();
-                var files = await _fileService.GetAllFilesAsync();
-                var blobs = await _blobService.GetAllBlobsAsync();
-
-                ViewBag.CustomerCount = customers?.Count() ?? 0;
-                ViewBag.ProductCount = products?.Count() ?? 0;
-                ViewBag.QueueLength = queueLength;
-                ViewBag.FileCount = files?.Count() ?? 0;
-                ViewBag.BlobCount = blobs?.Count() ?? 0;
-
-                // Recent data for dashboard 
-                ViewBag.RecentCustomers = customers?.OrderByDescending(c => c.CreatedDate).Take(5) ?? Enumerable.Empty<Customer>();
-                ViewBag.RecentProducts = products?.OrderByDescending(p => p.CreatedDate).Take(5) ?? Enumerable.Empty<Product>();
-
-                _logger.LogInformation("Dashboard loaded successfully. Customers: {CustomerCount}, Products: {ProductCount}",
-                    (object)ViewBag.CustomerCount, (object)ViewBag.ProductCount);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading dashboard data");
-
-                // Ensure ViewBag properties are still properly typed even on error
-                ViewBag.RecentCustomers = Enumerable.Empty<Customer>();
-                ViewBag.RecentProducts = Enumerable.Empty<Product>();
-
-                ViewBag.ErrorMessage = "Unable to connect to Azure Storage services. Please check your configuration.";
-
-                // More specific error messages based on exception type
-                if (ex.Message.Contains("No connection could be made") || ex.Message.Contains("connection was refused"))
+                if (User.IsInRole("Admin"))
                 {
-                    ViewBag.ErrorMessage += " The storage service appears to be unreachable. Please verify your connection string and that Azure Storage is accessible.";
+                    return RedirectToAction("Index", "Home"); // Or admin dashboard
                 }
-                else if (ex.Message.Contains("authenticate"))
+                else if (User.IsInRole("Customer"))
                 {
-                    ViewBag.ErrorMessage += " Authentication failed. Please check your storage account key in the connection string.";
-                }
-                else if (ex.Message.Contains("resolve service"))
-                {
-                    ViewBag.ErrorMessage += " Service configuration error. Please ensure all services are properly registered.";
+                    return RedirectToAction("Dashboard", "CustomerArea");
                 }
             }
 
-            return View();
+            // If not logged in, redirect to login page
+            return RedirectToAction("Login", "Account");
         }
 
         public IActionResult Privacy()

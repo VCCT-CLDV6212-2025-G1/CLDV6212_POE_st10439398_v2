@@ -24,10 +24,10 @@ namespace CLDV6212_POE_st10439398.Controllers
 
         // GET: Account/Login
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
+        public IActionResult Login(string? returnUrl = null, bool force = false)
         {
-            // If already logged in, redirect based on role
-            if (User.Identity?.IsAuthenticated == true)
+            // If already logged in and not forced, redirect based on role
+            if (User.Identity?.IsAuthenticated == true && !force)
             {
                 return RedirectBasedOnRole();
             }
@@ -98,10 +98,10 @@ namespace CLDV6212_POE_st10439398.Controllers
 
         // GET: Account/Register
         [HttpGet]
-        public IActionResult Register()
+        public IActionResult Register(bool force = false)
         {
-            // If already logged in, redirect based on role
-            if (User.Identity?.IsAuthenticated == true)
+            // If already logged in and not forced, redirect based on role
+            if (User.Identity?.IsAuthenticated == true && !force)
             {
                 return RedirectBasedOnRole();
             }
@@ -154,8 +154,15 @@ namespace CLDV6212_POE_st10439398.Controllers
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
 
-                TempData["SuccessMessage"] = "Registration successful! Welcome to ABC Retail.";
-                return RedirectToAction("Dashboard", "Customer");
+                TempData["SuccessMessage"] = "Registration successful! Welcome to ABC Retail Cloud.";
+                // Redirect customers to CustomerArea dashboard
+                if (user.Role?.Equals("Customer", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return RedirectToAction("Dashboard", "CustomerArea");
+                }
+
+                // Redirect admins to Admin dashboard
+                return RedirectToAction("Dashboard", "Admin");
             }
 
             return RedirectToAction(nameof(Login));
@@ -188,7 +195,7 @@ namespace CLDV6212_POE_st10439398.Controllers
             }
             else if (User.IsInRole("Customer"))
             {
-                return RedirectToAction("Dashboard", "Customer");
+                return RedirectToAction("Dashboard", "CustomerArea");
             }
 
             return RedirectToAction("Index", "Home");
