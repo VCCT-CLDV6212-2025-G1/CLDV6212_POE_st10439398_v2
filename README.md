@@ -12,6 +12,7 @@ A comprehensive cloud-based retail management system demonstrating enterprise-gr
 
 ## Live Application
 **Deployed URL:** https://abcretail-st10439398-gccda9cgeye9djgw.southafricanorth-01.azurewebsites.net/
+Youtube Azure Services Link : https://youtu.be/AK-mCMk3ars
 
 ## Technology Stack
 
